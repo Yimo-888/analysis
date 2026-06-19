@@ -1,0 +1,8 @@
+body { background: #f6f7f9; }
+.card { border: 0; }
+.navbar-brand { letter-spacing: .5px; }
+code { color: #324; }
+.table > :not(caption) > * > * { padding: .4rem .5rem; }
+.display-6 { font-size: 1.9rem; font-weight: 600; }
+a { text-decoration: none; }
+a:hover { text-decoration: underline; }

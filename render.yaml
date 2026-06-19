@@ -1,0 +1,19 @@
+# One-click deploy on Render (free tier). The free filesystem is ephemeral,
+# which is fine here: build.sh re-seeds the synthetic data on every deploy and
+# the app is read-only.
+services:
+  - type: web
+    name: catalyst-demo
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn catalyst.wsgi:application"
+    envVars:
+      - key: DEBUG
+        value: "0"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: WEB_CONCURRENCY
+        value: "2"

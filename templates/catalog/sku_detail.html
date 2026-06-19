@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ p.sku }}{% endblock %}
+{% block content %}
+
+<nav class="small mb-2"><a href="{% url 'catalog' %}">← Catalog</a></nav>
+
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+  <div>
+    <h1 class="h3 mb-1">{{ p.name }}</h1>
+    <div class="text-muted">{{ p.sku }} · {{ p.brand }} · {{ p.max_size }}</div>
+  </div>
+  <div class="text-end">
+    <span class="badge bg-{{ cat_color }} fs-6">{{ r.category }}</span>
+    <span class="badge bg-{{ tier_color }} fs-6">{{ r.lifecycle_tier }}</span>
+    <div class="text-muted small mt-1">portfolio rank #{{ r.portfolio_rank }}</div>
+  </div>
+</div>
+
+<div class="alert alert-light border mt-3">
+  <strong>Why this category?</strong> {{ r.category_reason }}
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card shadow-sm"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Daily units (trailing 140 days)</h2>
+      <canvas id="spark" height="120"></canvas>
+    </div></div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card shadow-sm"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Metrics</h2>
+      <table class="table table-sm mb-0">
+        <tr><td>Weighted daily sales</td><td class="text-end">{{ r.weighted_daily_sales|floatformat:3 }}</td></tr>
+        <tr><td>Velocity (per active day)</td><td class="text-end">{{ r.velocity|floatformat:2 }}</td></tr>
+        <tr><td>Sell-through (grounded)</td><td class="text-end">{{ r.sell_through_rate|floatformat:3 }}</td></tr>
+        <tr><td>Days of inventory</td><td class="text-end">{{ r.days_of_inventory|floatformat:0 }}</td></tr>
+        <tr><td>ROI</td><td class="text-end">{{ r.roi|floatformat:2 }}</td></tr>
+        <tr><td>Current inventory</td><td class="text-end">{{ p.current_inventory }} ({{ p.lab_qty }} lab / {{ p.wh_qty }} sealed)</td></tr>
+        {% if r.liquid_age_days is not None %}
+        <tr><td>Liquid age</td><td class="text-end">{{ r.liquid_age_days }} d</td></tr>
+        {% endif %}
+        <tr><td>Inventory value</td><td class="text-end">${{ r.inventory_value|floatformat:0 }}</td></tr>
+        <tr><td>Cost / published / tier</td><td class="text-end">${{ p.cost_per_ml }}/ml · ${{ r.published_price|floatformat:2 }} · {{ r.expected_tier }}</td></tr>
+      </table>
+    </div></div>
+  </div>
+</div>
+
+{% if breakdown %}
+<div class="card shadow-sm mt-4 border-danger"><div class="card-body">
+  <h2 class="h6 text-uppercase text-danger">Clearance discount: {{ r.discount_pct }}%</h2>
+  <p class="small text-muted mb-2">Multi-factor formula, clamped to 5–40%:</p>
+  <code>
+    {{ breakdown.base }}
+    + 0.30·rank({{ breakdown.rank_f }}) = {{ breakdown.rank_w }}
+    + 0.30·age({{ breakdown.age_f }}) = {{ breakdown.age_w }}
+    + 0.40·overstock({{ breakdown.over_f }}) = {{ breakdown.over_w }}
+    → <strong>{{ r.discount_pct }}%</strong> ({{ r.liquidation_strategy }})
+  </code>
+</div></div>
+{% endif %}
+
+<div class="card shadow-sm mt-4"><div class="card-body">
+  <h2 class="h6 text-uppercase text-muted">v1 (original design) said</h2>
+  <p class="mb-1">Verdict: <strong>{{ r.v1_verdict }}</strong>
+    {% if r.is_pareto_optimal %}<span class="badge bg-success">Pareto-optimal</span>{% endif %}
+    &nbsp;·&nbsp; v1 rank #{{ r.v1_rank }} &nbsp;·&nbsp;
+    naive sell-through <strong>{{ r.naive_sell_through|floatformat:2 }}</strong>
+    (vs grounded {{ r.sell_through_rate|floatformat:2 }})</p>
+  <p class="small text-muted mb-0">See <a href="{% url 'evolution' %}">Design Evolution</a> for how v1 and v2 differ.</p>
+</div></div>
+
+{{ spark|json_script:"sparkData" }}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const spark = JSON.parse(document.getElementById('sparkData').textContent);
+  new Chart(document.getElementById('spark'), {
+    type: 'bar',
+    data: { labels: spark.map(d => d.x), datasets: [{
+      data: spark.map(d => d.y), backgroundColor: '#0d6efd' }]},
+    options: {
+      scales: { x: { display: false }, y: { beginAtZero: true, ticks: { precision: 0 } } },
+      plugins: { legend: { display: false } }
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load catalog_extras %}
+{% block title %}Design Evolution{% endblock %}
+{% block content %}
+
+<h1 class="h3">Design Evolution — v1 → v2</h1>
+<p class="text-muted col-lg-9">
+  The first version of this engine was a clean, textbook design: normalize sales, profit and
+  ROI, find the <strong>Pareto-optimal frontier</strong>, and score on a fixed weighting.
+  It was elegant — and it broke on real operational data. The production version (v2) keeps
+  the spirit but grounds every signal in physical reality. Here's the before/after.
+</p>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">v1 · Pareto frontier</h2>
+      <p class="small text-muted">Each point is a SKU in (sales, profit) space.
+        Green points are Pareto-optimal ({{ n_frontier }} of {{ n_total }}) — nothing
+        beats them on all objectives at once.</p>
+      <canvas id="pareto" height="220"></canvas>
+    </div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">What reality broke</h2>
+      <table class="table table-sm align-middle mb-0">
+        <thead><tr><th></th><th>v1 (idealized)</th><th>v2 (production)</th></tr></thead>
+        <tbody class="small">
+          <tr><td class="fw-semibold">Sell-through</td>
+              <td>units ÷ <em>current</em> stock → explodes when nearly OOS</td>
+              <td>units ÷ <em>average</em> stock → bounded, honest</td></tr>
+          <tr><td class="fw-semibold">OOS items</td>
+              <td>still scored as healthy</td>
+              <td>routed to Slow Mover/Watch &amp; frozen</td></tr>
+          <tr><td class="fw-semibold">Scale</td>
+              <td>per-SKU queries</td>
+              <td>bulk-loaded, ~O(1) queries for the whole catalog</td></tr>
+          <tr><td class="fw-semibold">Output</td>
+              <td>Pareto / non-Pareto + score</td>
+              <td>8-way category cascade → lifecycle tier → price action</td></tr>
+          <tr><td class="fw-semibold">Missing cost</td>
+              <td>assumed clean</td>
+              <td>fallbacks + guards; feeds the mispricing audit</td></tr>
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+</div>
+
+<h2 class="h5">Why v2? Three SKUs where the two engines disagree</h2>
+<p class="text-muted small">These are planted, reproducible examples from the synthetic seed.</p>
+
+<div class="row g-3">
+  {% for r in cases %}
+  <div class="col-lg-4">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h3 class="h6 mb-1"><a href="{% url 'sku_detail' r.product.sku %}">{{ r.product.sku }}</a></h3>
+      <div class="text-muted small mb-2">{{ r.product.name }}</div>
+
+      <div class="d-flex justify-content-between border-top pt-2">
+        <span class="text-muted small">v1 verdict</span>
+        <span class="fw-semibold">{{ r.v1_verdict }}{% if r.is_pareto_optimal %} ★{% endif %}</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span class="text-muted small">v2 category</span>
+        <span><span class="badge bg-{{ cat_colors|get_item:r.category|default:'secondary' }}">{{ r.category }}</span></span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span class="text-muted small">naive vs grounded STR</span>
+        <span>{{ r.naive_sell_through|floatformat:2 }} → {{ r.sell_through_rate|floatformat:2 }}</span>
+      </div>
+      <p class="small text-muted mt-2 mb-0">{{ r.category_reason }}</p>
+    </div></div>
+  </div>
+  {% endfor %}
+</div>
+
+{{ frontier|json_script:"frontierData" }}
+{{ interior|json_script:"interiorData" }}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const frontier = JSON.parse(document.getElementById('frontierData').textContent);
+  const interior = JSON.parse(document.getElementById('interiorData').textContent);
+  new Chart(document.getElementById('pareto'), {
+    type: 'scatter',
+    data: { datasets: [
+      { label: 'interior', data: interior, backgroundColor: 'rgba(108,117,125,.35)', pointRadius: 2 },
+      { label: 'Pareto-optimal', data: frontier, backgroundColor: '#198754', pointRadius: 4 }
+    ]},
+    options: {
+      scales: { x: { title: { display: true, text: 'sales (normalized)' } },
+                y: { title: { display: true, text: 'profit (normalized)' } } }
+    }
+  });
+</script>
+{% endblock %}
