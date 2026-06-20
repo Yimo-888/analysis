@@ -1,0 +1,6 @@
+<div class="subnav mb-3">
+  <ul class="nav nav-pills">
+    <li class="nav-item"><a class="nav-link {% if active == 'dashboard' %}active{% endif %}" href="{% url 'lifecycle:dashboard' %}">Overview</a></li>
+    <li class="nav-item"><a class="nav-link {% if active == 'clearance' %}active{% endif %}" href="{% url 'lifecycle:clearance' %}">Clearance Queue</a></li>
+  </ul>
+</div>

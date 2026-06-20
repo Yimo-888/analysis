@@ -1,0 +1,45 @@
+{% extends "core/base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+
+<div class="py-3 mb-2">
+  <h1 class="display-6 mb-1">Catalyst</h1>
+  <p class="lead text-muted mb-1">Inventory intelligence, lifecycle &amp; dynamic pricing
+    for a ~{{ n_products }}-SKU catalog of perishable goods.</p>
+  <p class="text-muted">One site, four independent apps — each a separate, self-contained module
+    you can open and read on its own.</p>
+</div>
+
+{% if not has_data %}
+<div class="alert alert-warning">No data yet — run <code>python manage.py seed_demo</code>.</div>
+{% endif %}
+
+<div class="row g-3">
+  {% for a in apps %}
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <h2 class="h5 mb-0">{{ a.name }}</h2>
+          {% if a.badge %}<span class="badge bg-{{ a.color }}">{{ a.badge }}</span>{% endif %}
+        </div>
+        <div class="text-muted small mb-2">{{ a.tagline }}</div>
+        <p class="mb-3">{{ a.blurb }}</p>
+        <a href="{% url a.url %}" class="btn btn-outline-dark btn-sm stretched-link">Open {{ a.name }} →</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card shadow-sm mt-4"><div class="card-body">
+  <h2 class="h6 text-uppercase text-muted">How the apps connect</h2>
+  <p class="mb-0 small">
+    <code>core</code> holds the synthetic data and runs a pipeline that feeds every app:
+    <strong>core metrics → analytics (v1) → dx_analytics (v2) → lifecycle → automation</strong>.
+    Each app owns its own logic, URLs, and pages; this mirrors the multi-app structure of the
+    real system it's modeled on.
+  </p>
+</div></div>
+
+{% endblock %}

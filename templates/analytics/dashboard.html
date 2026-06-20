@@ -1,0 +1,96 @@
+{% extends "core/base.html" %}
+{% block title %}Analytics (v1){% endblock %}
+{% block content %}
+
+<div class="module-intro rounded p-3 mb-4">
+  <h1 class="h4 mb-1">Analytics <span class="badge bg-secondary">v1 · original design</span></h1>
+  <p class="mb-0 text-muted">My first analytics engine: normalize <strong>sales · profit · ROI</strong>,
+    find the <strong>Pareto-optimal frontier</strong>, and score on a fixed weighting
+    (0.2·sales + 0.5·profit + 0.3·ROI). Clean inventory theory — but it reads demand off the
+    <em>current</em> stock snapshot, so it misjudges out-of-stock items. That flaw is what
+    motivated the <a href="{% url 'dx_analytics:dashboard' %}">v2 rewrite</a>.</p>
+</div>
+
+{% if empty %}
+  <div class="alert alert-warning">No data yet — run <code>python manage.py seed_demo</code>.</div>
+{% else %}
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Pareto frontier</h2>
+      <p class="small text-muted">SKUs in (sales, profit) space. Green = Pareto-optimal
+        ({{ n_frontier }} of {{ n_total }}) — nothing beats them on every objective at once.</p>
+      <canvas id="pareto" height="240"></canvas>
+    </div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <h2 class="h6 text-uppercase text-muted">Top SKUs by v1 balanced score</h2>
+      <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead><tr><th>#</th><th>SKU</th><th>Name</th>
+          <th class="text-end">Score</th><th class="text-end">Pareto</th></tr></thead>
+        <tbody>
+        {% for r in top %}
+          <tr>
+            <td class="text-muted">{{ r.v1_rank }}</td>
+            <td><a href="{% url 'dx_analytics:sku_detail' r.product.sku %}">{{ r.product.sku }}</a></td>
+            <td>{{ r.product.name }}</td>
+            <td class="text-end">{{ r.score_balanced|floatformat:3 }}</td>
+            <td class="text-end">{% if r.is_pareto_optimal %}<span class="badge bg-success">★</span>{% else %}—{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<div class="card shadow-sm mt-4 border-warning"><div class="card-body">
+  <h2 class="h6 text-uppercase text-warning">Where v1 breaks — three SKUs v2 reads differently</h2>
+  <div class="row g-3">
+    {% for r in cases %}
+    <div class="col-md-4">
+      <div class="border rounded p-3 h-100">
+        <h3 class="h6 mb-1"><a href="{% url 'dx_analytics:sku_detail' r.product.sku %}">{{ r.product.sku }}</a></h3>
+        <div class="text-muted small mb-2">{{ r.product.name }}</div>
+        <div class="d-flex justify-content-between"><span class="text-muted small">v1 verdict</span>
+          <span class="fw-semibold">{{ r.v1_verdict }}</span></div>
+        <div class="d-flex justify-content-between"><span class="text-muted small">v2 category</span>
+          <span>{{ r.category }}</span></div>
+        <div class="d-flex justify-content-between"><span class="text-muted small">naive→grounded STR</span>
+          <span>{{ r.naive_sell_through|floatformat:2 }} → {{ r.sell_through_rate|floatformat:2 }}</span></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="small text-muted mt-2 mb-0">Example: an out-of-stock SKU with a little stale history
+    divides by a near-zero current stock, so v1's sell-through explodes and it looks like a star.
+    v2 grounds the signal in average inventory and correctly freezes it.</p>
+</div></div>
+
+{{ frontier|json_script:"frontierData" }}
+{{ interior|json_script:"interiorData" }}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const fEl = document.getElementById('frontierData');
+  if (fEl) {
+    const frontier = JSON.parse(fEl.textContent);
+    const interior = JSON.parse(document.getElementById('interiorData').textContent);
+    new Chart(document.getElementById('pareto'), {
+      type: 'scatter',
+      data: { datasets: [
+        { label: 'interior', data: interior, backgroundColor: 'rgba(108,117,125,.35)', pointRadius: 2 },
+        { label: 'Pareto-optimal', data: frontier, backgroundColor: '#198754', pointRadius: 4 } ]},
+      options: { scales: {
+        x: { title: { display: true, text: 'sales (normalized)' } },
+        y: { title: { display: true, text: 'profit (normalized)' } } } }
+    });
+  }
+</script>
+{% endblock %}

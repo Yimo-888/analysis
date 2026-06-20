@@ -1,0 +1,6 @@
+<div class="subnav mb-3">
+  <ul class="nav nav-pills">
+    <li class="nav-item"><a class="nav-link {% if active == 'pricing' %}active{% endif %}" href="{% url 'automation:pricing' %}">Pricing Pipeline</a></li>
+    <li class="nav-item"><a class="nav-link {% if active == 'mispricing' %}active{% endif %}" href="{% url 'automation:mispricing' %}">Mispricing Audit</a></li>
+  </ul>
+</div>

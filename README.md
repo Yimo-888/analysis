@@ -23,16 +23,20 @@ that broke on messy operational data, and the second is the version worth shippi
 
 ---
 
-## What it does
+## Four apps, one site
 
-| Page | What it shows |
-|---|---|
-| **Dashboard** | Category mix, a power-law rank curve, lifecycle-tier counts, capital at risk, top movers. |
-| **Catalog** | Every SKU with its rank, category, lifecycle tier, velocity, sell-through, days-of-inventory, ROI and discount — filterable and searchable. |
-| **SKU detail** | A 140-day sales sparkline, full metrics, a plain-English *"why this category"* explanation, and the discount math when applicable. |
-| **Clearance & Pricing** | The liquidation queue with each SKU's **multi-factor discount** broken down into its rank / age / overstock components. |
-| **Mispricing Audit** | Reconstructs the price *tier* each SKU was published at and flags items published far below the tier their cost implies. |
-| **Design Evolution** | The v1 Pareto frontier, a v1-vs-v2 comparison, and three concrete SKUs where the two engines **disagree** — and why v2 is right. |
+It's structured as a multi-app Django site (mirroring the real system): a shared
+`core` data layer plus four independent feature apps you can open and read on
+their own.
+
+| App | URL | What it is |
+|---|---|---|
+| **Analytics (v1)** | `/analytics/` | The original, textbook design — normalize sales/profit/ROI, find the **Pareto-optimal frontier**, score on a fixed weighting. Includes the v1-vs-v2 comparison showing where it breaks. |
+| **DX Analytics (v2)** | `/dx-analytics/` | The production rewrite: grounded sell-through, catalog ranking, an **8-way category cascade**, plus a filterable catalog table and per-SKU detail pages. |
+| **Automation** | `/automation/` | The cost-driven **pricing pipeline** (cost → tier → published price per size) and the **mispricing audit** that flags items published far too cheap. |
+| **Lifecycle** | `/lifecycle/` | A 6-tier **state machine** (NEW → STAR → CORE → WATCH → LIQUIDATE → DISPOSE) and the **clearance-discount** queue with a per-SKU factor breakdown. |
+
+The home page (`/`) introduces all four and explains how the pipeline connects them.
 
 ---
 
@@ -91,7 +95,7 @@ classic signature of a cost lookup that failed and defaulted to the bottom tier)
 | Scale | per-SKU queries | bulk-loaded, ~constant query count for the whole catalog |
 | Missing cost | assumed clean | fallbacks + guards; feeds the mispricing audit |
 
-The **Design Evolution** page demonstrates this with planted SKUs — e.g.
+The **Analytics (v1)** app demonstrates this with planted SKUs — e.g.
 `DEMO-PHANTOM` is out of stock with a little stale history: v1's snapshot-based
 sell-through makes it look like a star, while v2 grounds the signal in average
 inventory and correctly freezes it.
@@ -129,18 +133,24 @@ real `SECRET_KEY` in the environment.
 ## Project layout
 
 ```
-catalog/
+core/                        shared data + orchestration
   models.py                  Product · DailySale · AnalyticsResult
   services/
-    engine.py                metrics, categorization, lifecycle, discount, Pareto
+    metrics.py               per-SKU base metrics + numeric helpers
     pricing.py               cost → tier → price map (illustrative, invented values)
-  management/commands/
-    seed_demo.py             synthetic catalog + sales + planted edge cases
-    run_analytics.py         re-run the engine over existing data
-  views.py                   six read-only dashboards
-  tests.py                   engine unit tests + a view smoke test
-templates/catalog/           Bootstrap pages
+    run.py                   the pipeline: core → analytics → dx_analytics → lifecycle → automation
+  management/commands/        seed_demo · run_analytics
+  tests.py                   per-app logic tests + a full view smoke test
+analytics/services.py        v1: Pareto frontier, balanced score
+dx_analytics/services.py     v2: grounded sell-through, ranking, category cascade
+lifecycle/services.py        tier routing + clearance-discount engine
+automation/services.py       pricing audit
+<each app>/views.py, urls.py     its own pages, mounted under its own URL prefix
+templates/<app>/             Bootstrap pages per app
 ```
+
+Each feature app is presentation + domain logic over the shared `core` data, so
+each one can be shown and explained independently.
 
 ---
 

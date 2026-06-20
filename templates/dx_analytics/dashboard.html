@@ -1,0 +1,101 @@
+{% extends "core/base.html" %}
+{% load humanize %}
+{% load core_extras %}
+{% block title %}DX Analytics (v2){% endblock %}
+{% block subnav %}{% include "dx_analytics/_subnav.html" with active='dashboard' %}{% endblock %}
+{% block content %}
+
+<div class="module-intro rounded p-3 mb-4">
+  <h1 class="h4 mb-1">DX Analytics <span class="badge bg-success">v2 · production</span></h1>
+  <p class="mb-0 text-muted">The rewrite the company adopted. Grounds sell-through in
+    <em>average</em> inventory, ranks the catalog on a composite score, and runs an
+    <strong>8-way category cascade</strong> off portfolio-wide percentiles. Output feeds the
+    <a href="{% url 'lifecycle:dashboard' %}">lifecycle</a> tiers and clearance pricing.</p>
+</div>
+
+{% if empty %}
+  <div class="alert alert-warning">No data yet — run <code>python manage.py seed_demo</code>.</div>
+{% else %}
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="text-muted small text-uppercase">SKUs analyzed</div>
+    <div class="display-6">{{ n|intcomma }}</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="text-muted small text-uppercase">Inventory value</div>
+    <div class="display-6">${{ total_inv_value|floatformat:0|intcomma }}</div></div></div></div>
+  <div class="col-12 col-lg-6"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="text-muted small text-uppercase">Category mix</div>
+    <div class="d-flex flex-wrap gap-2 mt-2">
+      {% for c in cat_rows %}
+        <span class="badge text-bg-light border">
+          <span class="badge bg-{{ c.color }}">&nbsp;</span> {{ c.category }}: <strong>{{ c.count }}</strong></span>
+      {% endfor %}
+    </div></div></div></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-5"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Category distribution</h2>
+    <canvas id="catChart" height="240"></canvas>
+  </div></div></div>
+  <div class="col-lg-7"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Power-law rank curve</h2>
+    <p class="small text-muted">Portfolio score vs. rank — a few SKUs carry the catalog; the long
+      tail is the liquidation/disposal pool.</p>
+    <canvas id="curveChart" height="150"></canvas>
+  </div></div></div>
+</div>
+
+<div class="card shadow-sm mt-4"><div class="card-body">
+  <h2 class="h6 text-uppercase text-muted">Top movers</h2>
+  <div class="table-responsive">
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr><th>#</th><th>SKU</th><th>Name</th><th>Category</th>
+      <th class="text-end">Vel/d</th><th class="text-end">Sell-through</th><th class="text-end">ROI</th></tr></thead>
+    <tbody>
+    {% for r in top_movers %}
+      <tr>
+        <td class="text-muted">{{ r.portfolio_rank }}</td>
+        <td><a href="{% url 'dx_analytics:sku_detail' r.product.sku %}">{{ r.product.sku }}</a></td>
+        <td>{{ r.product.name }}</td>
+        <td><span class="badge bg-{{ cat_colors|get_item:r.category|default:'secondary' }}">{{ r.category }}</span></td>
+        <td class="text-end">{{ r.weighted_daily_sales|floatformat:2 }}</td>
+        <td class="text-end">{{ r.sell_through_rate|floatformat:2 }}</td>
+        <td class="text-end">{{ r.roi|floatformat:2 }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div></div>
+
+{{ cat_rows|json_script:"catData" }}
+{{ curve|json_script:"curveData" }}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const cEl = document.getElementById('catData');
+  if (cEl) {
+    const cats = JSON.parse(cEl.textContent);
+    new Chart(document.getElementById('catChart'), {
+      type: 'doughnut',
+      data: { labels: cats.map(c => c.category),
+        datasets: [{ data: cats.map(c => c.count), backgroundColor: cats.map(c => c.hex) }] },
+      options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } } }
+    });
+    const curve = JSON.parse(document.getElementById('curveData').textContent);
+    new Chart(document.getElementById('curveChart'), {
+      type: 'line',
+      data: { datasets: [{ label: 'Portfolio score', data: curve, borderColor: '#0d6efd',
+        backgroundColor: 'rgba(13,110,253,.1)', fill: true, pointRadius: 0, tension: .25 }] },
+      options: { parsing: false,
+        scales: { x: { type: 'linear', title: { display: true, text: 'rank' } },
+                  y: { title: { display: true, text: 'score' } } },
+        plugins: { legend: { display: false } } }
+    });
+  }
+</script>
+{% endblock %}

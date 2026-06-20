@@ -1,0 +1,69 @@
+{% extends "core/base.html" %}
+{% load humanize %}
+{% block title %}Pricing Pipeline{% endblock %}
+{% block subnav %}{% include "automation/_subnav.html" with active='pricing' %}{% endblock %}
+{% block content %}
+
+<div class="module-intro rounded p-3 mb-4">
+  <h1 class="h4 mb-1">Automation — Pricing Pipeline</h1>
+  <p class="mb-0 text-muted">Instead of pricing thousands of SKUs by hand, every item is priced off
+    a single input — its <strong>cost per ml</strong> → a price <strong>tier</strong> → a published
+    price for each bottle size. The <a href="{% url 'automation:mispricing' %}">mispricing audit</a>
+    is the safety net that catches when this goes wrong.</p>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-auto"><div class="card shadow-sm"><div class="card-body py-2">
+    <span class="text-muted small text-uppercase">SKUs auto-priced</span>
+    <div class="h4 mb-0">{{ n|intcomma }}</div></div></div></div>
+  <div class="col-auto"><div class="card shadow-sm"><div class="card-body py-2">
+    <span class="text-muted small text-uppercase">Prices published</span>
+    <div class="h4 mb-0">{{ prices_published|intcomma }}</div>
+    <span class="small text-muted">{{ n_sizes }} sizes per SKU</span></div></div></div>
+  <div class="col-auto"><div class="card shadow-sm"><div class="card-body py-2">
+    <span class="text-muted small text-uppercase">Flagged by audit</span>
+    <div class="h4 mb-0 text-warning">{{ n_mispriced }}</div>
+    <span class="small"><a href="{% url 'automation:mispricing' %}">review →</a></span></div></div></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Price tier table (cost → tier → price)</h2>
+    <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>Tier</th><th class="text-end">Cost/ml ≥</th>
+        <th class="text-end">5ml</th><th class="text-end">10ml</th><th class="text-end">32ml</th></tr></thead>
+      <tbody>
+      {% for t in tier_table %}
+        <tr><td><span class="badge text-bg-light border">{{ t.tier }}</span></td>
+          <td class="text-end">${{ t.min_cost }}</td>
+          <td class="text-end">${{ t.p5 }}</td><td class="text-end">${{ t.p10 }}</td>
+          <td class="text-end">${{ t.p32 }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <p class="small text-muted mb-0 mt-2">Illustrative, invented numbers — the point is the
+      <em>mechanism</em>, not any real price book.</p>
+  </div></div></div>
+  <div class="col-lg-5"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Catalog distribution by tier</h2>
+    <canvas id="tierChart" height="220"></canvas>
+  </div></div></div>
+</div>
+
+{{ tier_dist|json_script:"tierDist" }}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const dist = JSON.parse(document.getElementById('tierDist').textContent);
+  new Chart(document.getElementById('tierChart'), {
+    type: 'bar',
+    data: { labels: dist.map(d => d.tier),
+      datasets: [{ data: dist.map(d => d.count), backgroundColor: '#0d6efd' }] },
+    options: { plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+</script>
+{% endblock %}

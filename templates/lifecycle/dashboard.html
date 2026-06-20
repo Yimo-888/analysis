@@ -1,0 +1,71 @@
+{% extends "core/base.html" %}
+{% load humanize %}
+{% block title %}Lifecycle{% endblock %}
+{% block subnav %}{% include "lifecycle/_subnav.html" with active='dashboard' %}{% endblock %}
+{% block content %}
+
+<div class="module-intro rounded p-3 mb-4">
+  <h1 class="h4 mb-1">Lifecycle — Tier State Machine</h1>
+  <p class="mb-0 text-muted">Every SKU moves through six tiers. The
+    <a href="{% url 'dx_analytics:dashboard' %}">dx_analytics</a> category decides the tier;
+    challenged SKUs are then routed by where the stock physically sits (aging perishable liquid
+    vs. sealed warehouse vs. nothing), and aging stock earns a
+    <a href="{% url 'lifecycle:clearance' %}">clearance discount</a>.</p>
+</div>
+
+{% if empty %}
+  <div class="alert alert-warning">No data yet — run <code>python manage.py seed_demo</code>.</div>
+{% else %}
+
+<div class="card shadow-sm mb-4"><div class="card-body">
+  <div class="d-flex flex-wrap align-items-center gap-2 fs-5">
+    {% for t in tier_rows %}
+      <span class="badge bg-{{ t.color }} fs-6">{{ t.tier }} · {{ t.count }}</span>
+      {% if not forloop.last %}<span class="text-muted">→</span>{% endif %}
+    {% endfor %}
+  </div>
+</div></div>
+
+<div class="row g-4">
+  <div class="col-lg-5"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Tier distribution</h2>
+    <canvas id="tierChart" height="220"></canvas>
+    <div class="mt-3 small text-muted">
+      Capital at risk (LIQUIDATE + DISPOSE): <strong>${{ capital_at_risk|floatformat:0|intcomma }}</strong>
+    </div>
+  </div></div></div>
+  <div class="col-lg-7"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">What each tier means</h2>
+    <table class="table table-sm align-middle mb-0">
+      <tbody>
+      {% for t in tier_rows %}
+        <tr>
+          <td style="width:8rem"><span class="badge bg-{{ t.color }}">{{ t.tier }}</span>
+            <span class="text-muted">{{ t.count }}</span></td>
+          <td class="small">{{ t.meaning }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div></div></div>
+</div>
+
+{{ tier_rows|json_script:"tierData" }}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const el = document.getElementById('tierData');
+  if (el) {
+    const rows = JSON.parse(el.textContent);
+    new Chart(document.getElementById('tierChart'), {
+      type: 'bar',
+      data: { labels: rows.map(r => r.tier),
+        datasets: [{ data: rows.map(r => r.count), backgroundColor: rows.map(r => r.hex) }] },
+      options: { plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+  }
+</script>
+{% endblock %}
