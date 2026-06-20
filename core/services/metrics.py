@@ -114,7 +114,6 @@ def compute_base_metrics(p, sales_by_day, ref_date):
         "profit_total": profit_unit * total_units,
         "inventory_value": round(current_inv * cost_unit, 2),
         "expected_tier": exp_tier,
-        "correct_price": correct_price,
         "current_inventory": current_inv,
         "days_since_sale": (ref_date - last_sale).days if last_sale else 9999,
         "liquid_age": liquid_age,
@@ -122,5 +121,4 @@ def compute_base_metrics(p, sales_by_day, ref_date):
         "lab_qty": p["lab_qty"],
         "wh_qty": p["wh_qty"],
         "max_size": size,
-        "published_tier": p.get("published_tier") or exp_tier,
     }

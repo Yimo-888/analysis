@@ -4,7 +4,8 @@ from datetime import date, timedelta
 from django.test import TestCase
 
 from analytics.services import pareto_optimal_flags
-from automation.services import audit
+from automation.models import Listing, PostingJob
+from automation.services import VARIANTS_PER_PRODUCT, expand
 from core.models import AnalyticsResult, DailySale, Product
 from core.services import pricing
 from core.services.metrics import compute_base_metrics, interp_factor
@@ -27,17 +28,28 @@ class PricingTests(TestCase):
         self.assertLess(pricing.price("T5", "10ml"), pricing.price("T5", "32ml"))
 
 
-class AuditTests(TestCase):
-    def test_bottom_tier_publish_flagged(self):
-        m = {"published_tier": "T1", "expected_tier": "T9", "max_size": "10ml"}
-        _price, mispriced, severity = audit(m)
-        self.assertTrue(mispriced)
-        self.assertIn("Severe", severity)
+class ListingFanoutTests(TestCase):
+    def test_expand_yields_unique_full_grid(self):
+        p = Product.objects.create(sku="B-1", name="Oud Rose", brand="Brand",
+                                   cost_per_ml=2.0, max_size="10ml")
+        variants = list(expand(p))
+        self.assertEqual(len(variants), VARIANTS_PER_PRODUCT)
+        skus = [v[0] for v in variants]
+        self.assertEqual(len(set(skus)), len(skus))           # unique
+        self.assertTrue(all(s.startswith(p.sku) for s in skus))
 
-    def test_correctly_priced_not_flagged(self):
-        m = {"published_tier": "T6", "expected_tier": "T6", "max_size": "10ml"}
-        _price, mispriced, _sev = audit(m)
-        self.assertFalse(mispriced)
+    def test_job_progress_counts(self):
+        job = PostingJob.objects.create(name="J", status=PostingJob.PROCESSING,
+                                        created_on=date(2026, 1, 1))
+        p = Product.objects.create(sku="B-2", name="X Y", brand="B", cost_per_ml=1.0)
+        for i, (vsku, bt, sz, title) in enumerate(expand(p)):
+            st = Listing.POSTED if i < 6 else (Listing.FAILED if i == 7 else Listing.PENDING)
+            Listing.objects.create(job=job, base_product=p, variant_sku=vsku, bottle_type=bt,
+                                   size=sz, title=title, status=st)
+        self.assertEqual(job.total, VARIANTS_PER_PRODUCT)
+        self.assertEqual(job.posted, 6)
+        self.assertEqual(job.failed, 1)
+        self.assertEqual(job.progress_pct, round(100 * 6 / VARIANTS_PER_PRODUCT))
 
 
 class DiscountTests(TestCase):
@@ -119,10 +131,18 @@ class ViewSmokeTests(TestCase):
             for d in range(0, 30, 3):
                 DailySale.objects.create(product=p, date=today - timedelta(days=d), units=1)
         run_engine(run_date=today)
+        # one posting job + its listings, so the automation pages have data
+        job = PostingJob.objects.create(name="Job", status=PostingJob.COMPLETED, created_on=today)
+        base = Product.objects.first()
+        for vsku, bt, sz, title in expand(base):
+            Listing.objects.create(job=job, base_product=base, variant_sku=vsku, bottle_type=bt,
+                                   size=sz, title=title, status=Listing.POSTED, posted_on=today)
+        self.job_pk = job.pk
 
     def test_every_app_page_loads(self):
         urls = ["/", "/analytics/", "/dx-analytics/", "/dx-analytics/catalog/",
-                "/automation/", "/automation/mispricing/", "/lifecycle/", "/lifecycle/clearance/"]
+                "/automation/", f"/automation/jobs/{self.job_pk}/",
+                "/lifecycle/", "/lifecycle/clearance/"]
         for url in urls:
             self.assertEqual(self.client.get(url).status_code, 200, url)
         sku = Product.objects.first().sku

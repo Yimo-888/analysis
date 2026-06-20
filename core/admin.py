@@ -13,9 +13,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(AnalyticsResult)
 class AnalyticsResultAdmin(admin.ModelAdmin):
-    list_display = ("product", "portfolio_rank", "category", "lifecycle_tier",
-                    "discount_pct", "mispriced")
-    list_filter = ("category", "lifecycle_tier", "mispriced")
+    list_display = ("product", "portfolio_rank", "category", "lifecycle_tier", "discount_pct")
+    list_filter = ("category", "lifecycle_tier")
     search_fields = ("product__sku", "product__name")
 
 

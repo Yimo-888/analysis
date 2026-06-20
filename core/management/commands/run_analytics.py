@@ -14,4 +14,4 @@ class Command(BaseCommand):
             return
         self.stdout.write(self.style.SUCCESS(
             f"Analyzed {summary['products']} SKUs (run {summary['run_date']}), "
-            f"boundary rank {summary['boundary_rank']}, {summary['mispriced']} mispriced."))
+            f"boundary rank {summary['boundary_rank']}."))

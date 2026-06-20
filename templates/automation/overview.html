@@ -1,0 +1,110 @@
+{% extends "core/base.html" %}
+{% load humanize %}
+{% load core_extras %}
+{% block title %}Automation{% endblock %}
+{% block content %}
+
+<div class="module-intro rounded p-3 mb-4">
+  <h1 class="h4 mb-1">Automation — Automated Listing Posting</h1>
+  <p class="mb-0 text-muted">Listing each variant by hand doesn't scale. This pipeline
+    <strong>explodes one base fragrance into {{ variants_per }} marketplace listings</strong>
+    (bottle&nbsp;type × size), generates each listing's SKU and title, and <strong>posts them in
+    bulk batch jobs</strong> — tracking every item as posted / pending / failed.</p>
+</div>
+
+{% if empty %}
+  <div class="alert alert-warning">No data yet — run <code>python manage.py seed_demo</code>.</div>
+{% else %}
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="text-muted small text-uppercase">Base products</div>
+    <div class="display-6">{{ n_base }}</div>
+    <div class="small text-muted">× {{ variants_per }} variants each</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="text-muted small text-uppercase">Listings generated</div>
+    <div class="display-6">{{ total|intcomma }}</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="text-muted small text-uppercase">Posted</div>
+    <div class="display-6 text-success">{{ posted|intcomma }}</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
+    <div class="text-muted small text-uppercase">Pending / failed</div>
+    <div class="display-6"><span class="text-warning">{{ pending }}</span>
+      <span class="text-muted">/</span> <span class="text-danger">{{ failed }}</span></div></div></div></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">How the fan-out works</h2>
+    {% if sample_base %}
+    <p class="small mb-2">One base product →
+      <a href="{% url 'dx_analytics:sku_detail' sample_base.sku %}">{{ sample_base.sku }}</a>
+      <span class="text-muted">{{ sample_base.name }}</span> → {{ variants_per }} listings:</p>
+    <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th>Variant SKU</th><th>Type</th><th>Size</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for v in sample_variants %}
+        <tr>
+          <td><code>{{ v.variant_sku }}</code></td>
+          <td>{{ v.bottle_type }}</td><td>{{ v.size }}</td>
+          <td><span class="badge bg-{{ listing_colors|get_item:v.status|default:'secondary' }}">{{ v.status }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% endif %}
+  </div></div></div>
+  <div class="col-lg-5"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6 text-uppercase text-muted">Listings by status</h2>
+    <canvas id="statusChart" height="200"></canvas>
+  </div></div></div>
+</div>
+
+<div class="card shadow-sm mt-4"><div class="card-body">
+  <h2 class="h6 text-uppercase text-muted">Posting jobs</h2>
+  <div class="table-responsive">
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Job</th><th>Date</th><th>Status</th><th style="width:30%">Progress</th>
+      <th class="text-end">Posted</th><th class="text-end">Pending</th><th class="text-end">Failed</th></tr></thead>
+    <tbody>
+    {% for row in jobs %}
+      <tr>
+        <td><a href="{% url 'automation:job_detail' row.job.pk %}">{{ row.job.name }}</a></td>
+        <td class="text-muted small">{{ row.job.created_on }}</td>
+        <td><span class="badge bg-{{ row.color }}">{{ row.job.get_status_display }}</span></td>
+        <td>
+          <div class="progress" style="height:1.1rem">
+            <div class="progress-bar bg-success" style="width: {{ row.job.progress_pct }}%">
+              {{ row.job.progress_pct }}%</div>
+          </div>
+        </td>
+        <td class="text-end text-success">{{ row.job.posted }}</td>
+        <td class="text-end text-warning">{{ row.job.pending }}</td>
+        <td class="text-end text-danger">{{ row.job.failed }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div></div>
+
+{{ status_dist|json_script:"statusData" }}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const el = document.getElementById('statusData');
+  if (el) {
+    const dist = JSON.parse(el.textContent);
+    new Chart(document.getElementById('statusChart'), {
+      type: 'doughnut',
+      data: { labels: dist.map(d => d.status),
+        datasets: [{ data: dist.map(d => d.count), backgroundColor: dist.map(d => d.hex) }] },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+</script>
+{% endblock %}

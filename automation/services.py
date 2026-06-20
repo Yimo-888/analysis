@@ -1,33 +1,32 @@
 """
-automation — the DX pricing pipeline + mispricing audit.
+automation — the listing fan-out.
 
-The pipeline auto-prices every SKU off its per-ml cost (cost → tier → published
-price per bottle size). The audit is the safety net: it reconstructs the tier a
-SKU was *published* at and flags anything published far below the tier its cost
-implies — the classic signature of a failed cost lookup defaulting to the cheapest
-tier.
+The core idea of the listing automation: one base product becomes many marketplace
+listings. A fixed matrix of (bottle type × size) variants is expanded for each base
+product, each variant getting its own generated SKU and title.
 """
-from core.services import pricing
-
-MISPRICE_TIER_GAP = 2      # published >= 2 tiers below expected = flagged
-SEVERE_TIER_GAP = 4
-
-
-def audit(m):
-    """Return (published_price, mispriced, severity) for one row."""
-    pub, exp = m["published_tier"], m["expected_tier"]
-    published_price = pricing.price(pub, m["max_size"])
-    gap = pricing.tier_index(exp) - pricing.tier_index(pub)
-    if gap >= SEVERE_TIER_GAP:
-        return published_price, True, "Severe (≥4 tiers under)"
-    if gap >= MISPRICE_TIER_GAP:
-        return published_price, True, "Likely mispriced"
-    return published_price, False, ""
+# (bottle_type, size) — the variant grid every base product is exploded into.
+VARIANT_GRID = [
+    ("Vial", "1ml"), ("Vial", "2ml"), ("Vial", "3ml"),
+    ("Vial", "5ml"), ("Vial", "10ml"), ("Vial", "32ml"),
+    ("Atomizer", "5ml"), ("Atomizer", "10ml"),
+]
+VARIANTS_PER_PRODUCT = len(VARIANT_GRID)
 
 
-def enrich_pricing(rows):
-    for r in rows:
-        published_price, mispriced, severity = audit(r)
-        r["published_price"] = published_price
-        r["mispriced"] = mispriced
-        r["mispricing_severity"] = severity
+def variant_sku(base_sku, bottle_type, size):
+    return f"{base_sku}-{size}-{'V' if bottle_type == 'Vial' else 'A'}"
+
+
+def variant_title(brand, name, bottle_type, size):
+    return f"{brand} {name} — {size} {bottle_type}"
+
+
+def expand(product):
+    """Yield the (variant_sku, bottle_type, size, title) tuples for one base product."""
+    for bottle_type, size in VARIANT_GRID:
+        yield (
+            variant_sku(product.sku, bottle_type, size),
+            bottle_type, size,
+            variant_title(product.brand, product.name, bottle_type, size),
+        )

@@ -15,7 +15,6 @@ class Product(models.Model):
 
     cost_per_ml = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     max_size = models.CharField(max_length=8, default="10ml")
-    published_tier = models.CharField(max_length=4, blank=True, default="")
 
     current_inventory = models.IntegerField(default=0)
     lab_qty = models.IntegerField(default=0)    # decanted / perishable units
@@ -76,12 +75,8 @@ class AnalyticsResult(models.Model):
     v1_rank = models.IntegerField(default=0)
     v1_verdict = models.CharField(max_length=40, default="")
 
-    # automation (pricing audit)
+    # the cost-implied price tier (used for ROI; shown on the SKU page)
     expected_tier = models.CharField(max_length=4, blank=True, default="")
-    published_price = models.FloatField(default=0)
-    correct_price = models.FloatField(default=0)
-    mispriced = models.BooleanField(default=False)
-    mispricing_severity = models.CharField(max_length=40, blank=True, default="")
 
     class Meta:
         ordering = ["portfolio_rank"]

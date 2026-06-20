@@ -2,9 +2,8 @@
 Cost-driven price-tier model (illustrative, invented numbers).
 
 A SKU's per-ml cost maps to a price *tier*; each tier has a published price per
-bottle size. The automation app's mispricing audit inverts this: given a
-published price it infers the tier that was used, then compares it to the tier
-the current cost implies.
+bottle size. This drives the ROI metric used in ranking and categorization
+(margin = tier price − unit cost).
 """
 TIER_NAMES = [f"T{i}" for i in range(1, 11)]
 TIER_MIN_COST_PER_ML = {

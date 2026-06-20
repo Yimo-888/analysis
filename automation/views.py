@@ -1,42 +1,67 @@
 from collections import Counter
 
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 
-from core.models import AnalyticsResult
-from core.services import pricing as pricing_svc  # aliased: a view below is named pricing()
+from .models import Listing, PostingJob
+from .services import VARIANTS_PER_PRODUCT
+
+LISTING_STATUS_COLOR = {"POSTED": "success", "PENDING": "warning", "FAILED": "danger"}
+JOB_STATUS_COLOR = {"COMPLETED": "success", "PROCESSING": "info",
+                    "QUEUED": "secondary", "FAILED": "danger"}
+COLOR_HEX = {"success": "#198754", "warning": "#ffc107", "danger": "#dc3545"}
 
 
-def pricing(request):
-    """The auto-pricing pipeline: cost per ml → tier → published price per size."""
-    results = list(AnalyticsResult.objects.select_related("product"))
-    tier_table = []
-    for t in pricing_svc.TIER_NAMES:
-        tier_table.append({
-            "tier": t,
-            "min_cost": pricing_svc.TIER_MIN_COST_PER_ML[t],
-            "p5": pricing_svc.price(t, "5ml"),
-            "p10": pricing_svc.price(t, "10ml"),
-            "p32": pricing_svc.price(t, "32ml"),
-        })
+def overview(request):
+    jobs = list(PostingJob.objects.all())
+    if not jobs:
+        return render(request, "automation/overview.html", {"empty": True})
 
-    dist = Counter(r.expected_tier for r in results)
-    tier_dist = [{"tier": t, "count": dist.get(t, 0)} for t in pricing_svc.TIER_NAMES]
-    n = len(results)
-    return render(request, "automation/pricing.html", {
-        "tier_table": tier_table,
-        "tier_dist": tier_dist,
-        "n": n,
-        "prices_published": n * len(pricing_svc.SIZES),
-        "n_sizes": len(pricing_svc.SIZES),
-        "n_mispriced": sum(1 for r in results if r.mispriced),
+    listings = Listing.objects.all()
+    total = listings.count()
+    status_counts = Counter(listings.values_list("status", flat=True))
+    status_dist = [{"status": s, "count": status_counts.get(s, 0),
+                    "hex": COLOR_HEX[LISTING_STATUS_COLOR[s]]}
+                   for s in ["POSTED", "PENDING", "FAILED"]]
+    n_base = listings.values("base_product").distinct().count()
+
+    # a concrete example of one base product fanned out into its variants
+    sample = listings.select_related("base_product").first()
+    sample_variants, sample_base = [], None
+    if sample:
+        sample_base = sample.base_product
+        sample_variants = list(Listing.objects.filter(base_product=sample_base)
+                               .order_by("variant_sku"))
+
+    job_rows = [{"job": j, "color": JOB_STATUS_COLOR.get(j.status, "secondary")} for j in jobs]
+
+    return render(request, "automation/overview.html", {
+        "empty": False,
+        "jobs": job_rows,
+        "n_jobs": len(jobs),
+        "total": total,
+        "posted": status_counts.get("POSTED", 0),
+        "pending": status_counts.get("PENDING", 0),
+        "failed": status_counts.get("FAILED", 0),
+        "n_base": n_base,
+        "variants_per": VARIANTS_PER_PRODUCT,
+        "status_dist": status_dist,
+        "sample_base": sample_base,
+        "sample_variants": sample_variants,
+        "listing_colors": LISTING_STATUS_COLOR,
     })
 
 
-def mispricing(request):
-    flagged = list(AnalyticsResult.objects.select_related("product")
-                   .filter(mispriced=True).order_by("-correct_price"))
-    total_gap = sum((r.correct_price - r.published_price) * max(r.product.current_inventory, 0)
-                    for r in flagged)
-    return render(request, "automation/mispricing.html", {
-        "flagged": flagged, "n": len(flagged), "total_gap": total_gap,
+def job_detail(request, pk):
+    job = get_object_or_404(PostingJob, pk=pk)
+    status = request.GET.get("status", "")
+    listings = job.listings.select_related("base_product").order_by("variant_sku")
+    if status:
+        listings = listings.filter(status=status)
+    return render(request, "automation/job_detail.html", {
+        "job": job,
+        "job_color": JOB_STATUS_COLOR.get(job.status, "secondary"),
+        "listings": list(listings),
+        "status": status,
+        "statuses": ["POSTED", "PENDING", "FAILED"],
+        "listing_colors": LISTING_STATUS_COLOR,
     })

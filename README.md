@@ -33,7 +33,7 @@ their own.
 |---|---|---|
 | **Analytics (v1)** | `/analytics/` | The original, textbook design — normalize sales/profit/ROI, find the **Pareto-optimal frontier**, score on a fixed weighting. Includes the v1-vs-v2 comparison showing where it breaks. |
 | **DX Analytics (v2)** | `/dx-analytics/` | The production rewrite: grounded sell-through, catalog ranking, an **8-way category cascade**, plus a filterable catalog table and per-SKU detail pages. |
-| **Automation** | `/automation/` | The cost-driven **pricing pipeline** (cost → tier → published price per size) and the **mispricing audit** that flags items published far too cheap. |
+| **Automation** | `/automation/` | **Automated listing posting** — explodes each base product into many variant listings (bottle type × size), generates each SKU/title, and posts them in bulk **batch jobs** with per-item status tracking (posted / pending / failed). |
 | **Lifecycle** | `/lifecycle/` | A 6-tier **state machine** (NEW → STAR → CORE → WATCH → LIQUIDATE → DISPOSE) and the **clearance-discount** queue with a per-SKU factor breakdown. |
 
 The home page (`/`) introduces all four and explains how the pipeline connects them.
@@ -79,9 +79,9 @@ discount % = 10 + 0.30·rank_factor + 0.30·age_factor + 0.40·overstock_factor
              clamped to 5–40%
 ```
 
-**5. Mispricing audit** — invert the price→tier map to infer the *published* tier,
-compare against the cost-implied tier, and flag anything ≥2 tiers too cheap (the
-classic signature of a cost lookup that failed and defaulted to the bottom tier).
+**5. Automated listing posting** — fan each base product out into a fixed grid of
+variant listings (bottle type × size), generate each listing's SKU and title, and
+post them in bulk batch jobs, tracking every item as posted / pending / failed.
 
 ---
 
@@ -93,7 +93,7 @@ classic signature of a cost lookup that failed and defaulted to the bottom tier)
 | Out-of-stock SKUs | still scored as healthy | routed to *Slow Mover/Watch* and frozen |
 | Output | Pareto-optimal / not + a score | 8-way category cascade → lifecycle tier → price action |
 | Scale | per-SKU queries | bulk-loaded, ~constant query count for the whole catalog |
-| Missing cost | assumed clean | fallbacks + guards; feeds the mispricing audit |
+| Missing cost | assumed clean | fallbacks + guards (no crashes on zero cost) |
 
 The **Analytics (v1)** app demonstrates this with planted SKUs — e.g.
 `DEMO-PHANTOM` is out of stock with a little stale history: v1's snapshot-based
@@ -137,14 +137,14 @@ core/                        shared data + orchestration
   models.py                  Product · DailySale · AnalyticsResult
   services/
     metrics.py               per-SKU base metrics + numeric helpers
-    pricing.py               cost → tier → price map (illustrative, invented values)
-    run.py                   the pipeline: core → analytics → dx_analytics → lifecycle → automation
+    pricing.py               cost → tier → price map (illustrative; drives ROI)
+    run.py                   the pipeline: core → analytics → dx_analytics → lifecycle
   management/commands/        seed_demo · run_analytics
   tests.py                   per-app logic tests + a full view smoke test
 analytics/services.py        v1: Pareto frontier, balanced score
 dx_analytics/services.py     v2: grounded sell-through, ranking, category cascade
 lifecycle/services.py        tier routing + clearance-discount engine
-automation/services.py       pricing audit
+automation/   models.py + services.py   PostingJob/Listing + the variant fan-out
 <each app>/views.py, urls.py     its own pages, mounted under its own URL prefix
 templates/<app>/             Bootstrap pages per app
 ```

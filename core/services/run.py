@@ -7,7 +7,6 @@ shared AnalyticsResult table. Each feature app owns one stage:
 from datetime import date
 
 from analytics.services import enrich_v1
-from automation.services import enrich_pricing
 from dx_analytics.services import enrich_v2
 from lifecycle.services import enrich_lifecycle
 
@@ -34,7 +33,7 @@ def run_engine(run_date=None):
         pdict = {
             "sku": p.sku, "current_inventory": p.current_inventory,
             "avg_window_inventory": p.avg_window_inventory, "cost_per_ml": p.cost_per_ml,
-            "max_size": p.max_size, "published_tier": p.published_tier,
+            "max_size": p.max_size,
             "lab_qty": p.lab_qty, "wh_qty": p.wh_qty, "is_new": p.is_new,
             "liquid_opened_date": p.liquid_opened_date,
         }
@@ -46,7 +45,6 @@ def run_engine(run_date=None):
     enrich_v1(rows)                 # v1 Pareto + balanced score
     boundary_rank = enrich_v2(rows)  # v2 score, rank, category cascade
     enrich_lifecycle(rows)          # tier + clearance discount
-    enrich_pricing(rows)            # pricing audit
 
     with transaction.atomic():
         AnalyticsResult.objects.all().delete()
@@ -64,17 +62,12 @@ def run_engine(run_date=None):
                 profit_norm=r["profit_norm"], roi_norm=r["roi_norm"],
                 score_balanced=r["score_balanced"], is_pareto_optimal=r["is_pareto"],
                 v1_rank=r["v1_rank"], v1_verdict=r["v1_verdict"],
-                expected_tier=r["expected_tier"], published_price=r["published_price"],
-                correct_price=r["correct_price"], mispriced=r["mispriced"],
-                mispricing_severity=r["mispricing_severity"],
+                expected_tier=r["expected_tier"],
             )
             for r in rows
         ], batch_size=500)
 
-    return {
-        "products": len(rows), "run_date": ref_date, "boundary_rank": boundary_rank,
-        "mispriced": sum(1 for r in rows if r["mispriced"]),
-    }
+    return {"products": len(rows), "run_date": ref_date, "boundary_rank": boundary_rank}
 
 
 def _max_sale_date(sales_index):

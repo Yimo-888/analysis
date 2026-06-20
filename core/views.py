@@ -19,10 +19,11 @@ APPS = [
         "color": "success",
     },
     {
-        "name": "Automation", "badge": "", "url": "automation:pricing",
-        "tagline": "Cost-driven pricing pipeline + mispricing audit.",
-        "blurb": "Auto-prices every SKU off its per-ml cost, and audits the catalog to flag "
-                 "items published far below the tier their cost implies.",
+        "name": "Automation", "badge": "", "url": "automation:overview",
+        "tagline": "Automated marketplace listing posting.",
+        "blurb": "Explodes each base product into many variant listings (bottle type × size), "
+                 "generates each SKU and title, and posts them in bulk batch jobs with "
+                 "per-item status tracking.",
         "color": "primary",
     },
     {

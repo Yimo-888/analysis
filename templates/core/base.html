@@ -21,7 +21,7 @@
         <li class="nav-item"><a class="nav-link {% if not app %}active{% endif %}" href="{% url 'home' %}">Home</a></li>
         <li class="nav-item"><a class="nav-link {% if app == 'analytics' %}active{% endif %}" href="{% url 'analytics:dashboard' %}">Analytics <span class="badge bg-secondary">v1</span></a></li>
         <li class="nav-item"><a class="nav-link {% if app == 'dx_analytics' %}active{% endif %}" href="{% url 'dx_analytics:dashboard' %}">DX&nbsp;Analytics <span class="badge bg-success">v2</span></a></li>
-        <li class="nav-item"><a class="nav-link {% if app == 'automation' %}active{% endif %}" href="{% url 'automation:pricing' %}">Automation</a></li>
+        <li class="nav-item"><a class="nav-link {% if app == 'automation' %}active{% endif %}" href="{% url 'automation:overview' %}">Automation</a></li>
         <li class="nav-item"><a class="nav-link {% if app == 'lifecycle' %}active{% endif %}" href="{% url 'lifecycle:dashboard' %}">Lifecycle</a></li>
         {% endwith %}
       </ul>
