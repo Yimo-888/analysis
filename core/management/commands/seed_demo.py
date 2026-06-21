@@ -19,21 +19,15 @@ from django.db import transaction
 
 from automation.models import Listing, PostingJob
 from automation.services import expand
+from core.fragrances import FRAGRANCES
 from core.models import AnalyticsResult, DailySale, Product
 from core.services.run import run_engine
 
-BRANDS = [
-    "Aurelia", "Noctis", "Maison Lume", "Cendre", "Orris House", "Saffron Road",
-    "Bois Neuf", "Atlas Parfums", "Solene", "Ember Lab", "Indigo Mer", "Caldera",
-    "Lunaire", "Sable", "Verdant", "Petrichor & Co", "Vael", "Lior",
-]
-NOTES = [
-    "Oud", "Amber", "Vetiver", "Bergamot", "Saffron", "Rose", "Cedar", "Musk",
-    "Tobacco", "Leather", "Iris", "Neroli", "Patchouli", "Sandalwood", "Vanilla",
-    "Cardamom", "Fig", "Tonka", "Incense", "Jasmine", "Smoke", "Sea Salt",
-]
-SIZES = ["5ml", "10ml", "32ml"]
 HORIZON = 365
+CONC_CODE = {
+    "Eau de Parfum": "EDP", "Eau de Toilette": "EDT", "Parfum": "Parfum",
+    "Extrait de Parfum": "Extrait", "Elixir": "Elixir", "Cologne": "Cologne",
+}
 FAIL_REASONS = [
     "image generation timed out", "duplicate SKU rejected by marketplace",
     "missing attribute: concentration", "price validation failed",
@@ -56,13 +50,11 @@ class Command(BaseCommand):
     help = "Seed a synthetic catalog, run the engine, and generate listing-posting jobs."
 
     def add_arguments(self, parser):
-        parser.add_argument("--skus", type=int, default=500)
         parser.add_argument("--no-run", action="store_true")
 
     def handle(self, *args, **opts):
         rng = random.Random(42)
         today = date.today()
-        n = opts["skus"]
 
         self.stdout.write("Clearing existing data ...")
         Listing.objects.all().delete()
@@ -86,24 +78,29 @@ class Command(BaseCommand):
                 if units > 0:
                     sales.append((sku, today - timedelta(days=day_offset), units))
 
-        for i in range(n):
-            brand = rng.choice(BRANDS)
-            name = f"{rng.choice(NOTES)} {rng.choice(NOTES)}"
-            code = "".join(w[0] for w in brand.split())[:3].upper()
-            sku = f"{code}-{i:04d}"
-            lam = math.exp(rng.gauss(-1.6, 1.0))
-            cost_per_ml = min(max(round(math.exp(rng.gauss(0.2, 0.9)), 2), 0.2), 9.5)
-            size = rng.choice(SIZES)
-            avg_inv = max(1.0, lam * rng.uniform(25, 90))
-            in_stock = rng.random() > 0.10
-            current_inv = int(avg_inv * rng.uniform(0.0, 1.4)) if in_stock else 0
-            lab = int(current_inv * rng.uniform(0.4, 1.0))
-            wh = current_inv - lab
-            liquid_age = rng.randint(20, 520) if lab > 0 else None
-            is_new = rng.random() < 0.06
-            series = [(d, knuth_poisson(rng, lam)) for d in range(HORIZON)]
-            add_product(sku, name, brand, cost_per_ml, size, avg_inv, current_inv,
-                        lab, wh, liquid_age, is_new, series)
+        # Real fragrance names (public product names) make the catalog look like a
+        # real decant shop; every number below is fabricated. Each fragrance is sold
+        # as a 1ml decant, with a chance of an extra 2/5ml variant.
+        for brand, line, conc, gender in FRAGRANCES:
+            short = f"{brand} {line} {CONC_CODE.get(conc, '')}".strip()
+            full = f"{brand} {line} {conc} {gender}"
+            sizes = ["1ml"]
+            if rng.random() < 0.45:
+                sizes.append(rng.choice(["2ml", "5ml"]))
+            for size in sizes:
+                sku = f"{short} {size}"
+                lam = math.exp(rng.gauss(1.4, 1.2))            # ~4/day median, top sellers ~50-100
+                cost_per_ml = min(max(round(math.exp(rng.gauss(0.3, 0.7)), 2), 0.3), 6.0)
+                avg_inv = max(5.0, lam * rng.uniform(45, 110))  # stock in the hundreds–thousands
+                in_stock = rng.random() > 0.08
+                current_inv = int(avg_inv * rng.uniform(0.15, 1.3)) if in_stock else 0
+                lab = int(current_inv * rng.uniform(0.4, 1.0))
+                wh = current_inv - lab
+                liquid_age = rng.randint(20, 520) if lab > 0 else None
+                is_new = rng.random() < 0.06
+                series = [(d, knuth_poisson(rng, lam)) for d in range(HORIZON)]
+                add_product(sku, full, brand, cost_per_ml, size, avg_inv, current_inv,
+                            lab, wh, liquid_age, is_new, series)
 
         self._plant(rng, add_product)
 
@@ -150,8 +147,10 @@ class Command(BaseCommand):
 
     # ── automated listing posting ───────────────────────────────────────
     def _seed_listings(self, rng, today):
-        """Fan a sample of base products out into variant listings across batch jobs."""
-        bases = list(Product.objects.exclude(sku__startswith="DEMO-").order_by("id")[:40])
+        """Fan a sample of base products out into variant listings across batch jobs.
+        One canonical (1ml) product per fragrance, so fan-out SKUs never collide."""
+        bases = list(Product.objects.filter(sku__endswith=" 1ml")
+                     .exclude(sku__startswith="DEMO-").order_by("id")[:40])
         job_specs = [
             ("Spring drop — batch 1", PostingJob.COMPLETED, 9),
             ("New arrivals — batch 2", PostingJob.COMPLETED, 6),

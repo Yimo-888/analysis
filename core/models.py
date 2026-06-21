@@ -9,7 +9,7 @@ from django.db import models
 
 
 class Product(models.Model):
-    sku = models.CharField(max_length=32, unique=True)
+    sku = models.CharField(max_length=64, unique=True)
     name = models.CharField(max_length=120)
     brand = models.CharField(max_length=80)
 

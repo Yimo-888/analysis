@@ -60,7 +60,7 @@ class Listing(models.Model):
 
     job = models.ForeignKey(PostingJob, on_delete=models.CASCADE, related_name="listings")
     base_product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="listings")
-    variant_sku = models.CharField(max_length=48, unique=True)
+    variant_sku = models.CharField(max_length=96, unique=True)
     bottle_type = models.CharField(max_length=16)   # Vial / Atomizer
     size = models.CharField(max_length=8)
     title = models.CharField(max_length=160)

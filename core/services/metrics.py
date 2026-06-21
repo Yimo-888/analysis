@@ -64,6 +64,7 @@ def compute_base_metrics(p, sales_by_day, ref_date):
     """Per-SKU facts. `p` is a dict of product attributes."""
     window_start = ref_date - timedelta(days=WINDOW_DAYS)
     total_units = 0
+    sumsq_units = 0
     days_with_sales = 0
     sub_totals = {label: 0 for label, *_ in SUBWINDOWS}
 
@@ -71,6 +72,7 @@ def compute_base_metrics(p, sales_by_day, ref_date):
         if units <= 0 or d <= window_start or d > ref_date:
             continue
         total_units += units
+        sumsq_units += units * units
         days_with_sales += 1
         age = (ref_date - d).days
         for label, start, end, _w in SUBWINDOWS:
@@ -82,6 +84,12 @@ def compute_base_metrics(p, sales_by_day, ref_date):
     for label, start, end, w in SUBWINDOWS:
         days = end - start
         weighted_daily_sales += w * (sub_totals[label] / days if days else 0)
+
+    # daily std over the full window (zero-sale days included), for safety stock
+    mean_daily = total_units / WINDOW_DAYS
+    daily_std = max(sumsq_units / WINDOW_DAYS - mean_daily ** 2, 0.0) ** 0.5
+    recent_avg = sub_totals["recent"] / 60.0    # last 60 days, daily
+    mid_avg = sub_totals["mid"] / 120.0         # 61–180 days, daily
 
     velocity = total_units / days_with_sales if days_with_sales else 0.0
     current_inv = p["current_inventory"]
@@ -105,8 +113,12 @@ def compute_base_metrics(p, sales_by_day, ref_date):
     return {
         "sku": p["sku"],
         "total_units": total_units,
+        "days_with_sales": days_with_sales,
         "weighted_daily_sales": round(weighted_daily_sales, 4),
         "velocity": round(velocity, 3),
+        "daily_std": round(daily_std, 4),
+        "recent_avg": round(recent_avg, 4),
+        "mid_avg": round(mid_avg, 4),
         "naive_sell_through": round(naive_sell_through, 4),
         "sell_through_rate": round(grounded_sell_through, 4),
         "days_of_inventory": round(days_of_inventory, 1),

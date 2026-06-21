@@ -1,96 +1,225 @@
 {% extends "core/base.html" %}
+{% load humanize %}
 {% block title %}Analytics (v1){% endblock %}
 {% block content %}
 
 <div class="module-intro rounded p-3 mb-4">
-  <h1 class="h4 mb-1">Analytics <span class="badge bg-secondary">v1 · original design</span></h1>
-  <p class="mb-0 text-muted">My first analytics engine: normalize <strong>sales · profit · ROI</strong>,
-    find the <strong>Pareto-optimal frontier</strong>, and score on a fixed weighting
-    (0.2·sales + 0.5·profit + 0.3·ROI). Clean inventory theory — but it reads demand off the
-    <em>current</em> stock snapshot, so it misjudges out-of-stock items. That flaw is what
-    motivated the <a href="{% url 'dx_analytics:dashboard' %}">v2 rewrite</a>.</p>
+  <h1 class="h4 mb-1">Inventory Analytics <span class="badge bg-secondary">v1 · original design</span></h1>
+  <p class="mb-0 text-muted">My first analytics engine — classical inventory theory: weighted demand,
+    safety stock, reorder point, EOQ, inventory turnover, and a Pareto-optimal frontier. It reads
+    demand off <em>current</em> stock, which is why I later rewrote it as
+    <a href="{% url 'dx_analytics:dashboard' %}">v2</a>.</p>
 </div>
 
 {% if empty %}
   <div class="alert alert-warning">No data yet — run <code>python manage.py seed_demo</code>.</div>
 {% else %}
 
-<div class="row g-4">
-  <div class="col-lg-6">
-    <div class="card shadow-sm h-100"><div class="card-body">
-      <h2 class="h6 text-uppercase text-muted">Pareto frontier</h2>
-      <p class="small text-muted">SKUs in (sales, profit) space. Green = Pareto-optimal
-        ({{ n_frontier }} of {{ n_total }}) — nothing beats them on every objective at once.</p>
-      <canvas id="pareto" height="240"></canvas>
-    </div></div>
-  </div>
-  <div class="col-lg-6">
-    <div class="card shadow-sm h-100"><div class="card-body">
-      <h2 class="h6 text-uppercase text-muted">Top SKUs by v1 balanced score</h2>
-      <div class="table-responsive">
-      <table class="table table-sm align-middle mb-0">
-        <thead><tr><th>#</th><th>SKU</th><th>Name</th>
-          <th class="text-end">Score</th><th class="text-end">Pareto</th></tr></thead>
-        <tbody>
-        {% for r in top %}
-          <tr>
-            <td class="text-muted">{{ r.v1_rank }}</td>
-            <td><a href="{% url 'dx_analytics:sku_detail' r.product.sku %}">{{ r.product.sku }}</a></td>
-            <td>{{ r.product.name }}</td>
-            <td class="text-end">{{ r.score_balanced|floatformat:3 }}</td>
-            <td class="text-end">{% if r.is_pareto_optimal %}<span class="badge bg-success">★</span>{% else %}—{% endif %}</td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-      </div>
-    </div></div>
-  </div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="card shadow-sm text-center h-100"><div class="card-body">
+    <div class="display-6 text-primary">{{ total_products|intcomma }}</div>
+    <div class="text-muted small text-uppercase">Total Products</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm text-center h-100"><div class="card-body">
+    <div class="display-6 text-success">{{ pareto_optimal }}</div>
+    <div class="text-muted small text-uppercase">Pareto Optimal</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm text-center h-100"><div class="card-body">
+    <div class="display-6 text-info">{{ total_inventory|intcomma }}</div>
+    <div class="text-muted small text-uppercase">Total Inventory</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm text-center h-100"><div class="card-body">
+    <div class="display-6 text-warning">{{ average_roi|floatformat:2 }}%</div>
+    <div class="text-muted small text-uppercase">Average ROI</div></div></div></div>
 </div>
 
-<div class="card shadow-sm mt-4 border-warning"><div class="card-body">
-  <h2 class="h6 text-uppercase text-warning">Where v1 breaks — three SKUs v2 reads differently</h2>
-  <div class="row g-3">
-    {% for r in cases %}
-    <div class="col-md-4">
-      <div class="border rounded p-3 h-100">
-        <h3 class="h6 mb-1"><a href="{% url 'dx_analytics:sku_detail' r.product.sku %}">{{ r.product.sku }}</a></h3>
-        <div class="text-muted small mb-2">{{ r.product.name }}</div>
-        <div class="d-flex justify-content-between"><span class="text-muted small">v1 verdict</span>
-          <span class="fw-semibold">{{ r.v1_verdict }}</span></div>
-        <div class="d-flex justify-content-between"><span class="text-muted small">v2 category</span>
-          <span>{{ r.category }}</span></div>
-        <div class="d-flex justify-content-between"><span class="text-muted small">naive→grounded STR</span>
-          <span>{{ r.naive_sell_through|floatformat:2 }} → {{ r.sell_through_rate|floatformat:2 }}</span></div>
-      </div>
-    </div>
-    {% endfor %}
+<form class="card shadow-sm mb-4" method="get"><div class="card-body">
+  <div class="row g-2 align-items-center">
+    <div class="col-md-5"><input name="q" value="{{ q }}" class="form-control"
+      placeholder="🔍  Search by Product ID or Name"></div>
+    <div class="col-md-3"><select name="status" class="form-select" onchange="this.form.submit()">
+      <option value="">All Products</option>
+      <option value="Optimal" {% if status == 'Optimal' %}selected{% endif %}>Optimal only</option>
+      <option value="Optimize" {% if status == 'Optimize' %}selected{% endif %}>Optimize only</option>
+    </select></div>
+    <div class="col-md-3"><select name="sort" class="form-select" onchange="this.form.submit()">
+      {% for key, label in sorts %}
+        <option value="{{ key }}" {% if key == sort %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select></div>
+    <div class="col-md-1 d-grid"><button class="btn btn-primary">Filter</button></div>
   </div>
-  <p class="small text-muted mt-2 mb-0">Example: an out-of-stock SKU with a little stale history
-    divides by a near-zero current stock, so v1's sell-through explodes and it looks like a star.
-    v2 grounds the signal in average inventory and correctly freezes it.</p>
+</div></form>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6">💲 Top Products by Profit</h2>
+    <canvas id="profitChart" height="200"></canvas>
+  </div></div></div>
+  <div class="col-lg-6"><div class="card shadow-sm h-100"><div class="card-body">
+    <h2 class="h6">％ Top Products by ROI</h2>
+    <canvas id="roiChart" height="200"></canvas>
+  </div></div></div>
+</div>
+
+<div class="card shadow-sm"><div class="card-body">
+  <h2 class="h6 mb-3">🗂 Product Inventory Analytics</h2>
+  <div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead><tr>
+      <th>Product ID</th><th>Name</th><th class="text-end">Stock</th>
+      <th class="text-end">Daily Sales</th><th class="text-end">Days Supply</th>
+      <th class="text-end">Profit</th><th class="text-end">ROI</th><th class="text-end">Score</th>
+      <th>Status</th><th>Actions</th>
+    </tr></thead>
+    <tbody>
+    {% for r in table %}
+      <tr>
+        <td><a href="{% url 'dx_analytics:sku_detail' r.product.sku %}" class="fw-semibold">{{ r.product.sku }}</a></td>
+        <td class="small text-muted">{{ r.product.name }}</td>
+        <td class="text-end">{{ r.stock|intcomma }}</td>
+        <td class="text-end">{{ r.daily_sales|floatformat:2 }}</td>
+        <td class="text-end">{% if r.days_supply < 30 %}<span class="badge bg-danger">{{ r.days_supply }}d</span>{% else %}{{ r.days_supply }}d{% endif %}</td>
+        <td class="text-end">${{ r.total_profit|floatformat:2|intcomma }}</td>
+        <td class="text-end">{{ r.roi_pct|floatformat:2 }}%</td>
+        <td class="text-end">{{ r.score|floatformat:3 }}</td>
+        <td>{% if r.status == 'Optimal' %}<span class="badge bg-success">Optimal</span>{% else %}<span class="badge bg-warning text-dark">Optimize</span>{% endif %}</td>
+        <td><button class="btn btn-sm btn-outline-primary py-0" onclick="openProduct('{{ r.product.sku|escapejs }}')">📊</button></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="10" class="text-center text-muted py-4">No products match.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
 </div></div>
 
-{{ frontier|json_script:"frontierData" }}
-{{ interior|json_script:"interiorData" }}
+<div class="card shadow-sm mt-4 border-warning"><div class="card-body">
+  <h2 class="h6 text-uppercase text-warning">Design note — why I rewrote this as v2</h2>
+  <p class="small mb-2">v1 reads demand off <em>current</em> stock. These three SKUs are where v2
+    (grounded in average inventory) reads them differently:</p>
+  <div class="row g-2">
+    {% for r in cases %}
+    <div class="col-md-4"><div class="border rounded p-2 h-100 small">
+      <a href="{% url 'dx_analytics:sku_detail' r.product.sku %}">{{ r.product.sku }}</a><br>
+      v1: <strong>{{ r.v1_verdict }}</strong> · v2: <strong>{{ r.category }}</strong><br>
+      <span class="text-muted">naive STR {{ r.naive_sell_through|floatformat:2 }} → grounded {{ r.sell_through_rate|floatformat:2 }}</span>
+    </div></div>
+    {% endfor %}
+  </div>
+</div></div>
+
+{{ top_profit|json_script:"profitData" }}
+{{ top_roi|json_script:"roiData" }}
+
+<!-- detail modal -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Product</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-4">
+          <div class="col-lg-6"><h6 class="text-muted">Sales Trend</h6><canvas id="trendChart" height="200"></canvas></div>
+          <div class="col-lg-6"><h6 class="text-muted">Inventory Status</h6><canvas id="invChart" height="200"></canvas></div>
+        </div>
+        <div class="row g-4 mt-1">
+          <div class="col-lg-6"><h6 class="text-muted">Performance Metrics (Normalized %)</h6><canvas id="radarChart" height="200"></canvas></div>
+        </div>
+        <hr>
+        <h6 class="text-muted text-uppercase small">Performance Metrics</h6>
+        <div class="row g-2 mb-2">
+          {% include "analytics/_metric.html" with id="m_wds" label="Weighted Daily Sales" color="primary" %}
+          {% include "analytics/_metric.html" with id="m_ppd" label="Profit Per Day Available" color="success" %}
+          {% include "analytics/_metric.html" with id="m_str" label="Sell-Through Rate" color="warning" %}
+          {% include "analytics/_metric.html" with id="m_inv" label="Current Inventory" color="success" %}
+        </div>
+        <h6 class="text-muted text-uppercase small">Inventory Management</h6>
+        <div class="row g-2 mb-2">
+          {% include "analytics/_metric.html" with id="m_rop" label="Reorder Point" color="info" %}
+          {% include "analytics/_metric.html" with id="m_eoq" label="Economic Order Quantity (EOQ)" color="primary" %}
+          {% include "analytics/_metric.html" with id="m_ss" label="Safety Stock" color="warning" %}
+          {% include "analytics/_metric.html" with id="m_doi" label="Days of Inventory" color="success" %}
+        </div>
+        <h6 class="text-muted text-uppercase small">Growth &amp; Ordering</h6>
+        <div class="row g-2">
+          {% include "analytics/_metric.html" with id="m_gr" label="Growth Rate (Recent vs Mid Period)" color="danger" %}
+          {% include "analytics/_metric.html" with id="m_sq" label="Suggested Quantity to Order" color="danger" %}
+          {% include "analytics/_metric.html" with id="m_turn" label="Inventory Turnover (Annual)" color="primary" %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script>
-  const fEl = document.getElementById('frontierData');
-  if (fEl) {
-    const frontier = JSON.parse(fEl.textContent);
-    const interior = JSON.parse(document.getElementById('interiorData').textContent);
-    new Chart(document.getElementById('pareto'), {
-      type: 'scatter',
-      data: { datasets: [
-        { label: 'interior', data: interior, backgroundColor: 'rgba(108,117,125,.35)', pointRadius: 2 },
-        { label: 'Pareto-optimal', data: frontier, backgroundColor: '#198754', pointRadius: 4 } ]},
-      options: { scales: {
-        x: { title: { display: true, text: 'sales (normalized)' } },
-        y: { title: { display: true, text: 'profit (normalized)' } } } }
+(function () {
+  const pEl = document.getElementById('profitData');
+  if (pEl) {
+    const profit = JSON.parse(pEl.textContent);
+    new Chart(document.getElementById('profitChart'), {
+      type: 'bar',
+      data: { labels: profit.map(d => d.label), datasets: [{ data: profit.map(d => d.value),
+        backgroundColor: 'rgba(108,140,250,.7)' }] },
+      options: { plugins: { legend: { display: false } },
+        scales: { x: { ticks: { maxRotation: 60, minRotation: 45, font: { size: 9 } } },
+                  y: { beginAtZero: true } } }
+    });
+    const roi = JSON.parse(document.getElementById('roiData').textContent);
+    new Chart(document.getElementById('roiChart'), {
+      type: 'bar',
+      data: { labels: roi.map(d => d.label), datasets: [{ data: roi.map(d => d.value),
+        backgroundColor: 'rgba(245,180,90,.8)' }] },
+      options: { plugins: { legend: { display: false } },
+        scales: { x: { ticks: { maxRotation: 60, minRotation: 45, font: { size: 9 } } },
+                  y: { beginAtZero: true } } }
     });
   }
+
+  let charts = {}, pending = null;
+  const modalEl = document.getElementById('detailModal');
+  function set(id, v) { const e = document.getElementById(id); if (e) e.textContent = v; }
+
+  window.openProduct = async function (sku) {
+    const res = await fetch('/analytics/product/' + encodeURIComponent(sku) + '/');
+    const d = await res.json();
+    pending = d;
+    document.getElementById('modalTitle').textContent = d.name;
+    const m = d.metrics;
+    set('m_wds', m.weighted_daily_sales);
+    set('m_ppd', '$' + m.profit_per_day);
+    set('m_str', m.sell_through_pct + '%');
+    set('m_inv', m.current_inventory);
+    set('m_rop', m.reorder_point);
+    set('m_eoq', m.eoq);
+    set('m_ss', m.safety_stock);
+    set('m_doi', m.days_of_inventory);
+    set('m_gr', m.growth_rate_pct + '%');
+    set('m_sq', m.suggested_qty);
+    set('m_turn', m.inventory_turnover);
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  };
+
+  if (modalEl) modalEl.addEventListener('shown.bs.modal', function () {
+    if (!pending) return;
+    Object.values(charts).forEach(c => c && c.destroy());
+    const d = pending;
+    charts.trend = new Chart(document.getElementById('trendChart'), {
+      type: 'line', data: { labels: d.trend.labels, datasets: [{ label: 'Daily Average Sales',
+        data: d.trend.values, borderColor: '#20c4b0', backgroundColor: 'rgba(32,196,176,.1)',
+        fill: true, tension: .3 }] }, options: { scales: { y: { beginAtZero: true } } } });
+    charts.inv = new Chart(document.getElementById('invChart'), {
+      type: 'bar', data: { labels: ['Current Stock', 'Safety Stock', 'Reorder Point'],
+        datasets: [{ data: [d.inventory.current, d.inventory.safety, d.inventory.reorder],
+        backgroundColor: ['#9ec5fe', '#cfe2ff', '#f1aeb5'] }] },
+      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
+    charts.radar = new Chart(document.getElementById('radarChart'), {
+      type: 'radar', data: { labels: d.radar.labels, datasets: [{ label: 'Normalized Scores',
+        data: d.radar.values, borderColor: '#f06292', backgroundColor: 'rgba(240,98,146,.2)' }] },
+      options: { scales: { r: { suggestedMin: 0, suggestedMax: 100 } } } });
+  });
+})();
 </script>
 {% endblock %}

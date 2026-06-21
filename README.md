@@ -31,7 +31,7 @@ their own.
 
 | App | URL | What it is |
 |---|---|---|
-| **Analytics (v1)** | `/analytics/` | The original, textbook design — normalize sales/profit/ROI, find the **Pareto-optimal frontier**, score on a fixed weighting. Includes the v1-vs-v2 comparison showing where it breaks. |
+| **Analytics (v1)** | `/analytics/` | The original, textbook design — classical inventory metrics (weighted demand, **safety stock, reorder point, EOQ, inventory turnover**) and a **Pareto-optimal frontier**. Stat cards, Top-by-Profit / Top-by-ROI charts, a product table with Optimal/Optimize status, and a per-product **detail modal** (sales-trend, inventory levels, performance radar). Includes a v1-vs-v2 note showing where it breaks. |
 | **DX Analytics (v2)** | `/dx-analytics/` | The production rewrite: grounded sell-through, catalog ranking, an **8-way category cascade**, plus a filterable catalog table and per-SKU detail pages. |
 | **Automation** | `/automation/` | **Automated listing posting** — explodes each base product into many variant listings (bottle type × size), generates each SKU/title, and posts them in bulk **batch jobs** with per-item status tracking (posted / pending / failed). |
 | **Lifecycle** | `/lifecycle/` | A 6-tier **state machine** (NEW → STAR → CORE → WATCH → LIQUIDATE → DISPOSE) and the **clearance-discount** queue with a per-SKU factor breakdown. |
@@ -141,7 +141,7 @@ core/                        shared data + orchestration
     run.py                   the pipeline: core → analytics → dx_analytics → lifecycle
   management/commands/        seed_demo · run_analytics
   tests.py                   per-app logic tests + a full view smoke test
-analytics/services.py        v1: Pareto frontier, balanced score
+analytics/   models.py + services.py   v1: classical inventory metrics + Pareto frontier
 dx_analytics/services.py     v2: grounded sell-through, ranking, category cascade
 lifecycle/services.py        tier routing + clearance-discount engine
 automation/   models.py + services.py   PostingJob/Listing + the variant fan-out
@@ -156,6 +156,7 @@ each one can be shown and explained independently.
 
 ### Note
 
-All numbers, thresholds, brands, and the price tables are **invented for this demo**
-and are not drawn from any real catalog. The point is to showcase the engineering
-and the design reasoning, not any company's data.
+The catalog uses **public fragrance product names** (e.g. "Creed Aventus") purely so
+it reads like a real decant shop; every sales, inventory, cost, pricing, and listing
+number is **fabricated** by the seed command. Nothing is drawn from any real catalog
+or company data — the point is to showcase the engineering and the design reasoning.

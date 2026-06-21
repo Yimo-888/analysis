@@ -6,7 +6,7 @@ shared AnalyticsResult table. Each feature app owns one stage:
 """
 from datetime import date
 
-from analytics.services import enrich_v1
+from analytics.services import build_product_stats, enrich_v1
 from dx_analytics.services import enrich_v2
 from lifecycle.services import enrich_lifecycle
 
@@ -16,6 +16,7 @@ from .metrics import compute_base_metrics
 def run_engine(run_date=None):
     from django.db import transaction
 
+    from analytics.models import ProductStats
     from core.models import AnalyticsResult, DailySale, Product
 
     products = list(Product.objects.all())
@@ -47,6 +48,8 @@ def run_engine(run_date=None):
     enrich_lifecycle(rows)          # tier + clearance discount
 
     with transaction.atomic():
+        ProductStats.objects.all().delete()
+        ProductStats.objects.bulk_create(build_product_stats(rows, ref_date), batch_size=500)
         AnalyticsResult.objects.all().delete()
         AnalyticsResult.objects.bulk_create([
             AnalyticsResult(

@@ -14,9 +14,11 @@ _TIER_PRICE_10ML = {
     "T1": 13.0, "T2": 16.0, "T3": 20.0, "T4": 25.0, "T5": 32.0,
     "T6": 42.0, "T7": 56.0, "T8": 74.0, "T9": 98.0, "T10": 130.0,
 }
-SIZES = ["5ml", "10ml", "32ml"]
-SIZE_ML = {"5ml": 5, "10ml": 10, "32ml": 32}
-_SIZE_FACTOR = {"5ml": 0.72, "10ml": 1.0, "32ml": 2.70}
+# Decant sizes — small samples cost much more per ml (packaging/handling), so
+# price is far from linear in volume. Factors are relative to the 10ml price.
+SIZES = ["1ml", "2ml", "3ml", "5ml", "10ml", "32ml"]
+SIZE_ML = {"1ml": 1, "2ml": 2, "3ml": 3, "5ml": 5, "10ml": 10, "32ml": 32}
+_SIZE_FACTOR = {"1ml": 0.30, "2ml": 0.42, "3ml": 0.52, "5ml": 0.72, "10ml": 1.0, "32ml": 2.70}
 
 
 def tier_index(tier):

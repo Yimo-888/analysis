@@ -112,12 +112,18 @@ class EngineRunTests(TestCase):
             for d in range(0, 60, 2):
                 DailySale.objects.create(product=p, date=today - timedelta(days=d), units=(i % 3) + 1)
 
-    def test_run_writes_dense_ranks(self):
+    def test_run_writes_dense_ranks_and_v1_stats(self):
+        from analytics.models import ProductStats
         summary = run_engine(run_date=date(2026, 1, 1))
         self.assertEqual(summary["products"], 20)
         self.assertEqual(AnalyticsResult.objects.count(), 20)
+        self.assertEqual(ProductStats.objects.count(), 20)
         ranks = sorted(AnalyticsResult.objects.values_list("portfolio_rank", flat=True))
         self.assertEqual(ranks, list(range(1, 21)))
+        # classical metrics are populated and sane
+        s = ProductStats.objects.first()
+        self.assertGreaterEqual(s.reorder_point, 0)
+        self.assertIn(s.status, {"Optimal", "Optimize"})
 
 
 class ViewSmokeTests(TestCase):
@@ -147,3 +153,7 @@ class ViewSmokeTests(TestCase):
             self.assertEqual(self.client.get(url).status_code, 200, url)
         sku = Product.objects.first().sku
         self.assertEqual(self.client.get(f"/dx-analytics/sku/{sku}/").status_code, 200)
+        # analytics detail JSON endpoint (drives the modal)
+        resp = self.client.get(f"/analytics/product/{sku}/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("metrics", resp.json())
