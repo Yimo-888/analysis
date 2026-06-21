@@ -1,4 +1,4 @@
-# Catalyst — Inventory Intelligence & Dynamic Pricing Engine
+# Demo — Inventory Intelligence & Dynamic Pricing Engine
 
 A self-contained demo of a **data-driven inventory analytics, product-lifecycle,
 and dynamic-pricing engine** for a catalog of perishable goods (stock ages,
@@ -68,8 +68,8 @@ otherwise (healthy):
 
 **3. Lifecycle routing** — categories map to a 6-tier state machine
 (`NEW · STAR · CORE · WATCH · LIQUIDATE · DISPOSE`); challenged SKUs are routed by
-**where the stock physically sits** (aging "lab" liquid vs. sealed warehouse vs.
-nothing), and spoiled liquid past its shelf life is written off.
+**where the stock physically sits** (aging open stock vs. sealed stock vs.
+nothing), and stock past its shelf life is written off.
 
 **4. Dynamic clearance discount** (website liquidations only):
 

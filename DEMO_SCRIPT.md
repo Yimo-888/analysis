@@ -1,4 +1,4 @@
-# Catalyst — Demo Walkthrough Script
+# Demo — Walkthrough Script
 
 A talking script for a screen-recording or live interview. Click cues are in
 `[brackets]`. The full walkthrough is ~90 seconds; a 30-second version and a
@@ -13,7 +13,7 @@ Chinese version follow. Personal aid — keep it out of the repo if you prefer
 ## 90-second version (English)
 
 **[Home page]**
-> "This is **Catalyst** — a demo of an inventory-intelligence platform I built for a
+> "This is **Demo** — a demo of an inventory-intelligence platform I built for a
 > perishable-goods catalog: about 1,200 SKUs that age, sell at very different speeds,
 > and get priced, listed, and cleared automatically. It's one site with four apps —
 > each one a piece I actually built — so let me walk through them."
@@ -64,7 +64,7 @@ Chinese version follow. Personal aid — keep it out of the repo if you prefer
 
 ## 30-second version (English)
 
-> "Catalyst is an inventory-intelligence platform I built — one site, four apps. **DX
+> "Demo is an inventory-intelligence platform I built — one site, four apps. **DX
 > Analytics** ranks ~1,200 SKUs daily and sorts them into eight categories. **Analytics**
 > is my original Pareto-based design — I keep it to show *why* I rewrote it: it misjudges
 > out-of-stock items, which the v2 fixes by grounding sell-through in average inventory.
@@ -77,7 +77,7 @@ Chinese version follow. Personal aid — keep it out of the repo if you prefer
 ## 90秒中文版
 
 **[Home 首页]**
-> "这是 **Catalyst**——我做的一套库存智能平台 demo，面向易过期商品目录：大约 1,200 个 SKU，
+> "这是 **Demo**——我做的一套库存智能平台 demo，面向易过期商品目录：大约 1,200 个 SKU，
 > 会老化、销售速度差异很大，并且自动定价、自动上架、自动清仓。一个网站、四个 app，每一个
 > 都是我实际做的，我一个个过一遍。"
 

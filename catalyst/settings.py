@@ -1,5 +1,5 @@
 """
-Django settings for the Catalyst demo.
+Django settings for the Demo project.
 
 This is a self-contained portfolio demo — it uses SQLite and synthetic data,
 has no external API integrations, and stores no secrets. Everything sensitive

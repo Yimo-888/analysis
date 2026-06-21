@@ -4,44 +4,84 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Catalyst{% endblock %} · Catalyst</title>
+  <title>{% block title %}Dashboard{% endblock %} · Demo</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="{% static 'css/app.css' %}" rel="stylesheet">
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="{% url 'home' %}">◆ Catalyst</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="nav">
-      <ul class="navbar-nav me-auto">
-        {% with app=request.resolver_match.app_name %}
-        <li class="nav-item"><a class="nav-link {% if not app %}active{% endif %}" href="{% url 'home' %}">Home</a></li>
-        <li class="nav-item"><a class="nav-link {% if app == 'analytics' %}active{% endif %}" href="{% url 'analytics:dashboard' %}">Analytics <span class="badge bg-secondary">v1</span></a></li>
-        <li class="nav-item"><a class="nav-link {% if app == 'dx_analytics' %}active{% endif %}" href="{% url 'dx_analytics:dashboard' %}">DX&nbsp;Analytics <span class="badge bg-success">v2</span></a></li>
-        <li class="nav-item"><a class="nav-link {% if app == 'automation' %}active{% endif %}" href="{% url 'automation:overview' %}">Automation</a></li>
-        <li class="nav-item"><a class="nav-link {% if app == 'lifecycle' %}active{% endif %}" href="{% url 'lifecycle:dashboard' %}">Lifecycle</a></li>
-        {% endwith %}
-      </ul>
-      <span class="navbar-text small">Synthetic data · portfolio demo</span>
+{% with app=request.resolver_match.app_name %}
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <a class="sidebar-brand" href="{% url 'home' %}">
+      <span class="brand-mark"><i class="bi bi-boxes"></i></span>
+      <span class="brand-text">Demo<small>inventory intelligence</small></span>
+    </a>
+    <nav class="sidebar-nav">
+      <a class="nav-link {% if not app %}active{% endif %}" href="{% url 'home' %}"><i class="bi bi-grid-1x2"></i> Home</a>
+      <div class="nav-group">Apps</div>
+      <a class="nav-link {% if app == 'analytics' %}active{% endif %}" href="{% url 'analytics:dashboard' %}"><i class="bi bi-graph-up"></i> Analytics <span class="tag">v1</span></a>
+      <a class="nav-link {% if app == 'dx_analytics' %}active{% endif %}" href="{% url 'dx_analytics:dashboard' %}"><i class="bi bi-bar-chart-line"></i> DX Analytics <span class="tag tag-ok">v2</span></a>
+      <a class="nav-link {% if app == 'automation' %}active{% endif %}" href="{% url 'automation:overview' %}"><i class="bi bi-lightning-charge"></i> Automation</a>
+      <a class="nav-link {% if app == 'lifecycle' %}active{% endif %}" href="{% url 'lifecycle:dashboard' %}"><i class="bi bi-arrow-repeat"></i> Lifecycle</a>
+    </nav>
+    <div class="sidebar-foot">
+      <i class="bi bi-database"></i> Synthetic data · portfolio demo
     </div>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="btn-icon d-lg-none" id="sidebarToggle" aria-label="Menu"><i class="bi bi-list"></i></button>
+      <span class="topbar-title d-lg-none">Demo</span>
+      <span class="ms-auto chip"><i class="bi bi-stars"></i> Synthetic data</span>
+    </header>
+
+    <main class="content">
+      {% block subnav %}{% endblock %}
+      {% block content %}{% endblock %}
+      <footer class="foot">
+        <strong>Demo</strong> — a multi-app inventory-intelligence site (analytics · dx&nbsp;analytics ·
+        automation · lifecycle). All data is synthetic; no real catalog, customer, or pricing data is used.
+      </footer>
+    </main>
   </div>
-</nav>
-
-<main class="container py-4">
-  {% block subnav %}{% endblock %}
-  {% block content %}{% endblock %}
-</main>
-
-<footer class="container py-4 text-muted small border-top mt-4">
-  <strong>Catalyst</strong> — a multi-app inventory-intelligence site (analytics · dx_analytics ·
-  automation · lifecycle). All data is synthetic; no real catalog, customer, or pricing data is used.
-</footer>
+</div>
+{% endwith %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  // global Chart.js theme so every chart matches the design system
+  if (window.Chart) {
+    Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = "#64748b";
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.boxWidth = 8;
+    Chart.defaults.plugins.tooltip.backgroundColor = "#0f172a";
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.cornerRadius = 8;
+    Chart.defaults.borderColor = "rgba(148,163,184,.15)";
+    Chart.defaults.scale.grid.color = "rgba(148,163,184,.15)";
+    Chart.defaults.scale.grid.drawBorder = false;
+    Chart.defaults.elements.bar.borderRadius = 6;
+    Chart.defaults.elements.line.tension = 0.35;
+    Chart.defaults.elements.point.radius = 0;
+  }
+  // mobile sidebar drawer
+  (function () {
+    const t = document.getElementById('sidebarToggle');
+    const b = document.getElementById('sidebarBackdrop');
+    const open = () => document.body.classList.add('sidebar-open');
+    const close = () => document.body.classList.remove('sidebar-open');
+    if (t) t.addEventListener('click', open);
+    if (b) b.addEventListener('click', close);
+  })();
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

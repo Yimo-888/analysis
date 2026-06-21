@@ -2,12 +2,17 @@
 {% block title %}Home{% endblock %}
 {% block content %}
 
-<div class="py-3 mb-2">
-  <h1 class="display-6 mb-1">Catalyst</h1>
-  <p class="lead text-muted mb-1">Inventory intelligence, lifecycle &amp; dynamic pricing
-    for a ~{{ n_products }}-SKU catalog of perishable goods.</p>
-  <p class="text-muted">One site, four independent apps — each a separate, self-contained module
-    you can open and read on its own.</p>
+<div class="hero mb-4">
+  <div class="position-relative" style="z-index:1">
+    <div class="d-inline-flex align-items-center gap-2 mb-2" style="opacity:.9">
+      <i class="bi bi-stars"></i><span class="small text-uppercase" style="letter-spacing:.14em">Inventory Intelligence</span>
+    </div>
+    <h1 class="display-6 mb-2" style="background:none;-webkit-text-fill-color:#fff">Demo</h1>
+    <p class="lead mb-0" style="max-width:60ch;opacity:.95">
+      Inventory analytics, product lifecycle &amp; dynamic pricing for a ~{{ n_products|default:0 }}-SKU
+      catalog of perishable goods — one site, four independent apps you can open and read on their own.
+    </p>
+  </div>
 </div>
 
 {% if not has_data %}
@@ -17,15 +22,17 @@
 <div class="row g-3">
   {% for a in apps %}
   <div class="col-md-6">
-    <div class="card shadow-sm h-100">
+    <div class="card feature-card shadow-sm">
       <div class="card-body">
+        <div class="feat-icon"><i class="bi {{ a.icon }}"></i></div>
         <div class="d-flex align-items-center gap-2 mb-1">
           <h2 class="h5 mb-0">{{ a.name }}</h2>
           {% if a.badge %}<span class="badge bg-{{ a.color }}">{{ a.badge }}</span>{% endif %}
         </div>
         <div class="text-muted small mb-2">{{ a.tagline }}</div>
-        <p class="mb-3">{{ a.blurb }}</p>
-        <a href="{% url a.url %}" class="btn btn-outline-dark btn-sm stretched-link">Open {{ a.name }} →</a>
+        <p class="mb-3 text-secondary">{{ a.blurb }}</p>
+        <a href="{% url a.url %}" class="btn btn-sm btn-outline-primary stretched-link">
+          Open {{ a.name }} <i class="bi bi-arrow-right"></i></a>
       </div>
     </div>
   </div>
@@ -33,8 +40,8 @@
 </div>
 
 <div class="card shadow-sm mt-4"><div class="card-body">
-  <h2 class="h6 text-uppercase text-muted">How the apps connect</h2>
-  <p class="mb-0 small">
+  <h2 class="h6 text-uppercase text-muted"><i class="bi bi-diagram-3 me-1"></i>How the apps connect</h2>
+  <p class="mb-0 small text-secondary">
     <code>core</code> holds the synthetic data and runs a pipeline that feeds every app:
     <strong>core metrics → analytics (v1) → dx_analytics (v2) → lifecycle → automation</strong>.
     Each app owns its own logic, URLs, and pages; this mirrors the multi-app structure of the
