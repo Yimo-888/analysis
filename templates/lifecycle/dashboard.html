@@ -8,8 +8,8 @@
   <h1 class="h4 mb-1">Lifecycle — Tier State Machine</h1>
   <p class="mb-0 text-muted">Every SKU moves through six tiers. The
     <a href="{% url 'dx_analytics:dashboard' %}">dx_analytics</a> category decides the tier;
-    challenged SKUs are then routed by where the stock physically sits (aging perishable liquid
-    vs. sealed warehouse vs. nothing), and aging stock earns a
+    challenged SKUs are then routed by where the stock physically sits (aging open stock
+    vs. sealed stock vs. nothing), and aging stock earns a
     <a href="{% url 'lifecycle:clearance' %}">clearance discount</a>.</p>
 </div>
 

@@ -101,14 +101,14 @@ def compute_base_metrics(p, sales_by_day, ref_date):
     days_of_inventory = current_inv / weighted_daily_sales if weighted_daily_sales > 0 else 999.0
 
     size = p["max_size"]
-    cost_unit = pricing.unit_cost(p["cost_per_ml"], size)
-    exp_tier = pricing.expected_tier(float(p["cost_per_ml"]))
+    cost_unit = pricing.pack_cost(p["cost_per_unit"], size)
+    exp_tier = pricing.expected_tier(float(p["cost_per_unit"]))
     correct_price = pricing.price(exp_tier, size)
     profit_unit = correct_price - cost_unit
     roi = profit_unit / cost_unit if cost_unit > 0 else 0.0
 
     last_sale = max((d for d, u in sales_by_day.items() if u > 0), default=None)
-    liquid_age = (ref_date - p["liquid_opened_date"]).days if p.get("liquid_opened_date") else None
+    shelf_age = (ref_date - p["opened_date"]).days if p.get("opened_date") else None
 
     return {
         "sku": p["sku"],
@@ -128,9 +128,9 @@ def compute_base_metrics(p, sales_by_day, ref_date):
         "expected_tier": exp_tier,
         "current_inventory": current_inv,
         "days_since_sale": (ref_date - last_sale).days if last_sale else 9999,
-        "liquid_age": liquid_age,
+        "shelf_age": shelf_age,
         "is_new": p["is_new"],
-        "lab_qty": p["lab_qty"],
-        "wh_qty": p["wh_qty"],
+        "open_qty": p["open_qty"],
+        "sealed_qty": p["sealed_qty"],
         "max_size": size,
     }

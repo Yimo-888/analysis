@@ -13,15 +13,15 @@ class Product(models.Model):
     name = models.CharField(max_length=120)
     brand = models.CharField(max_length=80)
 
-    cost_per_ml = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    max_size = models.CharField(max_length=8, default="10ml")
+    cost_per_unit = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    max_size = models.CharField(max_length=8, default="S")
 
     current_inventory = models.IntegerField(default=0)
-    lab_qty = models.IntegerField(default=0)    # decanted / perishable units
-    wh_qty = models.IntegerField(default=0)     # sealed warehouse units
+    open_qty = models.IntegerField(default=0)    # opened / perishable units
+    sealed_qty = models.IntegerField(default=0)  # sealed units
     avg_window_inventory = models.FloatField(default=0)
 
-    liquid_opened_date = models.DateField(null=True, blank=True)
+    opened_date = models.DateField(null=True, blank=True)   # for shelf age
     is_new = models.BooleanField(default=False)
     created_at = models.DateField(null=True, blank=True)
 
@@ -51,7 +51,7 @@ class AnalyticsResult(models.Model):
     days_of_inventory = models.FloatField(default=0)
     roi = models.FloatField(default=0)
     inventory_value = models.FloatField(default=0)
-    liquid_age_days = models.IntegerField(null=True, blank=True)
+    shelf_age_days = models.IntegerField(null=True, blank=True)
 
     # dx_analytics (v2)
     sell_through_rate = models.FloatField(default=0)

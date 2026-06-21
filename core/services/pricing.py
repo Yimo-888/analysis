@@ -1,34 +1,34 @@
 """
 Cost-driven price-tier model (illustrative, invented numbers).
 
-A SKU's per-ml cost maps to a price *tier*; each tier has a published price per
-bottle size. This drives the ROI metric used in ranking and categorization
-(margin = tier price − unit cost).
+A SKU's per-unit cost maps to a price *tier*; each tier has a published price per
+pack size. This drives the ROI metric used in ranking and categorization
+(margin = tier price − pack cost).
 """
 TIER_NAMES = [f"T{i}" for i in range(1, 11)]
-TIER_MIN_COST_PER_ML = {
+TIER_MIN_COST_PER_UNIT = {
     "T1": 0.00, "T2": 0.40, "T3": 0.80, "T4": 1.30, "T5": 2.00,
     "T6": 3.00, "T7": 4.20, "T8": 5.60, "T9": 7.00, "T10": 9.00,
 }
-_TIER_PRICE_10ML = {
+# Base published price per tier (for the reference "2XL" pack); other sizes scale.
+_TIER_BASE_PRICE = {
     "T1": 13.0, "T2": 16.0, "T3": 20.0, "T4": 25.0, "T5": 32.0,
     "T6": 42.0, "T7": 56.0, "T8": 74.0, "T9": 98.0, "T10": 130.0,
 }
-# Decant sizes — small samples cost much more per ml (packaging/handling), so
-# price is far from linear in volume. Factors are relative to the 10ml price.
-SIZES = ["1ml", "2ml", "3ml", "5ml", "10ml", "32ml"]
-SIZE_ML = {"1ml": 1, "2ml": 2, "3ml": 3, "5ml": 5, "10ml": 10, "32ml": 32}
-_SIZE_FACTOR = {"1ml": 0.30, "2ml": 0.42, "3ml": 0.52, "5ml": 0.72, "10ml": 1.0, "32ml": 2.70}
+# Pack sizes — smaller packs cost more per unit, so price is far from linear in size.
+SIZES = ["S", "M", "L", "XL", "2XL", "BULK"]
+SIZE_UNITS = {"S": 1, "M": 2, "L": 3, "XL": 5, "2XL": 10, "BULK": 32}
+_SIZE_FACTOR = {"S": 0.30, "M": 0.42, "L": 0.52, "XL": 0.72, "2XL": 1.0, "BULK": 2.70}
 
 
 def tier_index(tier):
     return TIER_NAMES.index(tier) if tier in TIER_NAMES else -1
 
 
-def expected_tier(cost_per_ml):
+def expected_tier(cost_per_unit):
     chosen = TIER_NAMES[0]
     for t in TIER_NAMES:
-        if cost_per_ml >= TIER_MIN_COST_PER_ML[t]:
+        if cost_per_unit >= TIER_MIN_COST_PER_UNIT[t]:
             chosen = t
         else:
             break
@@ -36,10 +36,10 @@ def expected_tier(cost_per_ml):
 
 
 def price(tier, size):
-    if tier not in _TIER_PRICE_10ML or size not in _SIZE_FACTOR:
+    if tier not in _TIER_BASE_PRICE or size not in _SIZE_FACTOR:
         return 0.0
-    return round(_TIER_PRICE_10ML[tier] * _SIZE_FACTOR[size], 2)
+    return round(_TIER_BASE_PRICE[tier] * _SIZE_FACTOR[size], 2)
 
 
-def unit_cost(cost_per_ml, size):
-    return round(float(cost_per_ml) * SIZE_ML.get(size, 10), 2)
+def pack_cost(cost_per_unit, size):
+    return round(float(cost_per_unit) * SIZE_UNITS.get(size, 1), 2)

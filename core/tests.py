@@ -18,20 +18,20 @@ class PricingTests(TestCase):
         self.assertEqual(pricing.expected_tier(0.1), "T1")
         self.assertEqual(pricing.expected_tier(9.9), "T10")
         prev = -1
-        for cpm in [0.1, 0.5, 1.5, 3.1, 5.0, 7.5, 9.5]:
-            idx = pricing.tier_index(pricing.expected_tier(cpm))
+        for cpu in [0.1, 0.5, 1.5, 3.1, 5.0, 7.5, 9.5]:
+            idx = pricing.tier_index(pricing.expected_tier(cpu))
             self.assertGreaterEqual(idx, prev)
             prev = idx
 
     def test_price_size_ordered(self):
-        self.assertLess(pricing.price("T5", "5ml"), pricing.price("T5", "10ml"))
-        self.assertLess(pricing.price("T5", "10ml"), pricing.price("T5", "32ml"))
+        self.assertLess(pricing.price("T5", "S"), pricing.price("T5", "2XL"))
+        self.assertLess(pricing.price("T5", "2XL"), pricing.price("T5", "BULK"))
 
 
 class ListingFanoutTests(TestCase):
     def test_expand_yields_unique_full_grid(self):
-        p = Product.objects.create(sku="B-1", name="Oud Rose", brand="Brand",
-                                   cost_per_ml=2.0, max_size="10ml")
+        p = Product.objects.create(sku="SKU-0001", name="Product 0001", brand="Vendor 01",
+                                   cost_per_unit=2.0, max_size="S")
         variants = list(expand(p))
         self.assertEqual(len(variants), VARIANTS_PER_PRODUCT)
         skus = [v[0] for v in variants]
@@ -41,10 +41,10 @@ class ListingFanoutTests(TestCase):
     def test_job_progress_counts(self):
         job = PostingJob.objects.create(name="J", status=PostingJob.PROCESSING,
                                         created_on=date(2026, 1, 1))
-        p = Product.objects.create(sku="B-2", name="X Y", brand="B", cost_per_ml=1.0)
-        for i, (vsku, bt, sz, title) in enumerate(expand(p)):
+        p = Product.objects.create(sku="SKU-0002", name="Product 0002", brand="B", cost_per_unit=1.0)
+        for i, (vsku, vt, sz, title) in enumerate(expand(p)):
             st = Listing.POSTED if i < 6 else (Listing.FAILED if i == 7 else Listing.PENDING)
-            Listing.objects.create(job=job, base_product=p, variant_sku=vsku, bottle_type=bt,
+            Listing.objects.create(job=job, base_product=p, variant_sku=vsku, variant_type=vt,
                                    size=sz, title=title, status=st)
         self.assertEqual(job.total, VARIANTS_PER_PRODUCT)
         self.assertEqual(job.posted, 6)
@@ -54,7 +54,7 @@ class ListingFanoutTests(TestCase):
 
 class DiscountTests(TestCase):
     def _m(self, rank, age, doi):
-        return {"portfolio_rank": rank, "liquid_age": age, "days_of_inventory": doi}
+        return {"portfolio_rank": rank, "shelf_age": age, "days_of_inventory": doi}
 
     def test_discount_band_and_monotonicity(self):
         low = discount_for(self._m(10, 0, 0), catalog_size=100)
@@ -71,12 +71,12 @@ class DiscountTests(TestCase):
 
 
 class RoutingTests(TestCase):
-    def test_sealed_dispose_candidate_rescued_to_ebay(self):
-        m = {"liquid_age": None, "lab_qty": 0, "wh_qty": 10}
-        self.assertEqual(resolve_lifecycle("Dispose Candidate", m), ("LIQUIDATE", "EBAY"))
+    def test_sealed_dispose_candidate_rescued_to_marketplace(self):
+        m = {"shelf_age": None, "open_qty": 0, "sealed_qty": 10}
+        self.assertEqual(resolve_lifecycle("Dispose Candidate", m), ("LIQUIDATE", "MARKETPLACE"))
 
-    def test_aging_lab_liquid_liquidates(self):
-        m = {"liquid_age": 400, "lab_qty": 20, "wh_qty": 0}
+    def test_aging_open_stock_liquidates(self):
+        m = {"shelf_age": 400, "open_qty": 20, "sealed_qty": 0}
         self.assertEqual(resolve_lifecycle("Liquidate Candidate", m), ("LIQUIDATE", "WEBSITE_DISCOUNT"))
 
 
@@ -93,8 +93,8 @@ class PhantomStockoutTests(TestCase):
     def test_grounded_str_does_not_explode_when_oos(self):
         today = date(2026, 1, 1)
         p = {"sku": "X", "current_inventory": 0, "avg_window_inventory": 50,
-             "cost_per_ml": 3.0, "max_size": "10ml", "published_tier": "",
-             "lab_qty": 0, "wh_qty": 0, "is_new": False, "liquid_opened_date": None}
+             "cost_per_unit": 3.0, "max_size": "S",
+             "open_qty": 0, "sealed_qty": 0, "is_new": False, "opened_date": None}
         sales = {today - timedelta(days=120 + i): 1 for i in range(40)}
         m = compute_base_metrics(p, sales, today)
         self.assertGreater(m["naive_sell_through"], 5)
@@ -106,9 +106,9 @@ class EngineRunTests(TestCase):
         today = date(2026, 1, 1)
         for i in range(20):
             p = Product.objects.create(
-                sku=f"S{i:02d}", name=f"Item {i}", brand="B", cost_per_ml=1.0 + i * 0.3,
-                max_size="10ml", current_inventory=10, avg_window_inventory=20,
-                lab_qty=10, wh_qty=0, liquid_opened_date=today - timedelta(days=100))
+                sku=f"SKU-{i:04d}", name=f"Product {i:04d}", brand="B", cost_per_unit=1.0 + i * 0.3,
+                max_size="S", current_inventory=10, avg_window_inventory=20,
+                open_qty=10, sealed_qty=0, opened_date=today - timedelta(days=100))
             for d in range(0, 60, 2):
                 DailySale.objects.create(product=p, date=today - timedelta(days=d), units=(i % 3) + 1)
 
@@ -120,7 +120,6 @@ class EngineRunTests(TestCase):
         self.assertEqual(ProductStats.objects.count(), 20)
         ranks = sorted(AnalyticsResult.objects.values_list("portfolio_rank", flat=True))
         self.assertEqual(ranks, list(range(1, 21)))
-        # classical metrics are populated and sane
         s = ProductStats.objects.first()
         self.assertGreaterEqual(s.reorder_point, 0)
         self.assertIn(s.status, {"Optimal", "Optimize"})
@@ -131,17 +130,16 @@ class ViewSmokeTests(TestCase):
         today = date(2026, 1, 1)
         for i in range(15):
             p = Product.objects.create(
-                sku=f"V{i:02d}", name=f"V {i}", brand="B", cost_per_ml=2.0, max_size="10ml",
-                current_inventory=5, avg_window_inventory=10, lab_qty=5, wh_qty=0,
-                liquid_opened_date=today - timedelta(days=400))
+                sku=f"SKU-{i:04d}", name=f"Product {i:04d}", brand="B", cost_per_unit=2.0, max_size="S",
+                current_inventory=5, avg_window_inventory=10, open_qty=5, sealed_qty=0,
+                opened_date=today - timedelta(days=400))
             for d in range(0, 30, 3):
                 DailySale.objects.create(product=p, date=today - timedelta(days=d), units=1)
         run_engine(run_date=today)
-        # one posting job + its listings, so the automation pages have data
         job = PostingJob.objects.create(name="Job", status=PostingJob.COMPLETED, created_on=today)
         base = Product.objects.first()
-        for vsku, bt, sz, title in expand(base):
-            Listing.objects.create(job=job, base_product=base, variant_sku=vsku, bottle_type=bt,
+        for vsku, vt, sz, title in expand(base):
+            Listing.objects.create(job=job, base_product=base, variant_sku=vsku, variant_type=vt,
                                    size=sz, title=title, status=Listing.POSTED, posted_on=today)
         self.job_pk = job.pk
 
@@ -153,7 +151,6 @@ class ViewSmokeTests(TestCase):
             self.assertEqual(self.client.get(url).status_code, 200, url)
         sku = Product.objects.first().sku
         self.assertEqual(self.client.get(f"/dx-analytics/sku/{sku}/").status_code, 200)
-        # analytics detail JSON endpoint (drives the modal)
         resp = self.client.get(f"/analytics/product/{sku}/")
         self.assertEqual(resp.status_code, 200)
         self.assertIn("metrics", resp.json())

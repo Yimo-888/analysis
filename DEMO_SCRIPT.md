@@ -14,7 +14,7 @@ Chinese version follow. Personal aid — keep it out of the repo if you prefer
 
 **[Home page]**
 > "This is **Catalyst** — a demo of an inventory-intelligence platform I built for a
-> perishable-goods catalog: about 500 SKUs that age, sell at very different speeds,
+> perishable-goods catalog: about 1,200 SKUs that age, sell at very different speeds,
 > and get priced, listed, and cleared automatically. It's one site with four apps —
 > each one a piece I actually built — so let me walk through them."
 
@@ -43,17 +43,17 @@ Chinese version follow. Personal aid — keep it out of the repo if you prefer
 > that wall on real data is exactly why I rewrote it as v2."
 
 **[Click Automation]**
-> "Listing every variant by hand doesn't scale, so I automated it. One base fragrance
-> fans out into eight marketplace listings — bottle type by size — each with a generated
-> SKU and title, posted in bulk batch jobs. You can see each job's live progress —
-> posted, pending, failed — and drill in to see every listing's status and why a failure
-> happened."
+> "Listing every variant by hand doesn't scale, so I automated it. **One click** runs the
+> whole catalog: each base SKU explodes into eight marketplace listings — variant type by
+> pack size — each with a generated SKU and title, posted in bulk batch jobs. The flow view
+> shows how the steps connect; you can drill into any job to see each listing's status and
+> why a failure happened."
 
 **[Click Lifecycle, then Clearance Queue; point at DEMO-DOOMED]**
 > "Finally, lifecycle. Each SKU runs through a six-tier state machine, and aging stock
-> gets a clearance discount weighted by rank, liquid age, and overstock. This one — 60-odd
-> bottles barely selling, near spoilage — gets marked down 38%. A *healthy* SKU the same
-> age stays at full price: age alone isn't the trigger, demand-versus-deadline is."
+> gets a clearance discount weighted by rank, shelf age, and overstock. This one — 60-odd
+> units barely selling, near the end of its shelf life — gets marked down 38%. A *healthy*
+> SKU the same age stays at full price: age alone isn't the trigger, demand-versus-deadline is."
 
 **[Back to Home]**
 > "So — ranking and categorization, a real v1-to-v2 redesign, automated listing, and
@@ -65,11 +65,11 @@ Chinese version follow. Personal aid — keep it out of the repo if you prefer
 ## 30-second version (English)
 
 > "Catalyst is an inventory-intelligence platform I built — one site, four apps. **DX
-> Analytics** ranks ~500 SKUs daily and sorts them into eight categories. **Analytics**
+> Analytics** ranks ~1,200 SKUs daily and sorts them into eight categories. **Analytics**
 > is my original Pareto-based design — I keep it to show *why* I rewrote it: it misjudges
 > out-of-stock items, which the v2 fixes by grounding sell-through in average inventory.
-> **Automation** fans each product into eight marketplace listings and posts them in
-> tracked batch jobs. **Lifecycle** runs a six-tier state machine with a multi-factor
+> **Automation** processes the whole catalog in **one click** — fanning each product into
+> eight marketplace listings and posting them in tracked batch jobs. **Lifecycle** runs a six-tier state machine with a multi-factor
 > clearance discount. All synthetic data, fully runnable — want me to dig into one?"
 
 ---
@@ -77,7 +77,7 @@ Chinese version follow. Personal aid — keep it out of the repo if you prefer
 ## 90秒中文版
 
 **[Home 首页]**
-> "这是 **Catalyst**——我做的一套库存智能平台 demo，面向易过期商品目录：大约 500 个 SKU，
+> "这是 **Catalyst**——我做的一套库存智能平台 demo，面向易过期商品目录：大约 1,200 个 SKU，
 > 会老化、销售速度差异很大，并且自动定价、自动上架、自动清仓。一个网站、四个 app，每一个
 > 都是我实际做的，我一个个过一遍。"
 
@@ -101,13 +101,13 @@ Chinese version follow. Personal aid — keep it out of the repo if you prefer
 > 我重写出 v2 的原因。"
 
 **[点 Automation]**
-> "逐个变体手工上架没法规模化,所以我把它自动化了。一个基础香水炸开成八条电商 listing——瓶型
-> × 容量,每条自动生成 SKU 和标题,用批量任务发布。可以看到每个任务的实时进度——已发布、
-> 待处理、失败,还能点进去看每条 listing 的状态和失败原因。"
+> "逐个变体手工上架没法规模化,所以我把它自动化了。**一键**跑完整个目录:每个基础 SKU 炸开成
+> 八条电商 listing——变体类型 × 规格,每条自动生成 SKU 和标题,用批量任务发布。流程图展示各步骤
+> 怎么串起来,还能点进任意任务看每条 listing 的状态和失败原因。"
 
 **[点 Lifecycle → Clearance Queue,指向 DEMO-DOOMED]**
-> "最后是生命周期。每个 SKU 走一个六层状态机,老化库存按「排名 + 液体年龄 + 积压」加权算清仓
-> 折扣。这个——六十多瓶几乎不动、接近过期——被打 38% 折。一个同样年龄但**健康**的 SKU 仍是
+> "最后是生命周期。每个 SKU 走一个六层状态机,老化库存按「排名 + 货架年龄 + 积压」加权算清仓
+> 折扣。这个——六十多件几乎不动、接近过保——被打 38% 折。一个同样年龄但**健康**的 SKU 仍是
 > 原价:触发清仓的不是年龄本身,而是「需求 vs 截止期」。"
 
 **[回到 Home]**
@@ -126,4 +126,4 @@ Chinese version follow. Personal aid — keep it out of the repo if you prefer
 - **Don't claim live business metrics** (revenue/savings). Say "designed/built", and that
   it's synthetic data — it keeps you bulletproof if they probe.
 - **If they interrupt with a question, stop and answer** — an interactive demo beats a monologue.
-- **Have one number ready per app**: ~500 SKUs · 8 categories · 8 variants/product · 6 tiers.
+- **Have one number ready per app**: ~1,200 SKUs · 8 categories · 8 variants/product · 6 tiers.

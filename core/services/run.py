@@ -33,10 +33,10 @@ def run_engine(run_date=None):
     for p in products:
         pdict = {
             "sku": p.sku, "current_inventory": p.current_inventory,
-            "avg_window_inventory": p.avg_window_inventory, "cost_per_ml": p.cost_per_ml,
+            "avg_window_inventory": p.avg_window_inventory, "cost_per_unit": p.cost_per_unit,
             "max_size": p.max_size,
-            "lab_qty": p.lab_qty, "wh_qty": p.wh_qty, "is_new": p.is_new,
-            "liquid_opened_date": p.liquid_opened_date,
+            "open_qty": p.open_qty, "sealed_qty": p.sealed_qty, "is_new": p.is_new,
+            "opened_date": p.opened_date,
         }
         m = compute_base_metrics(pdict, sales_index.get(p.id, {}), ref_date)
         m["_pid"] = p.id
@@ -56,7 +56,7 @@ def run_engine(run_date=None):
                 product_id=r["_pid"], run_date=ref_date,
                 weighted_daily_sales=r["weighted_daily_sales"], velocity=r["velocity"],
                 days_of_inventory=r["days_of_inventory"], roi=r["roi"],
-                inventory_value=r["inventory_value"], liquid_age_days=r["liquid_age"],
+                inventory_value=r["inventory_value"], shelf_age_days=r["shelf_age"],
                 sell_through_rate=r["sell_through_rate"], portfolio_score=r["portfolio_score"],
                 portfolio_rank=r["portfolio_rank"], category=r["category"],
                 category_reason=r["category_reason"], lifecycle_tier=r["lifecycle_tier"],

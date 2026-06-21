@@ -82,12 +82,12 @@ def sku_detail(request, sku):
     if r.discount_pct:
         n = AnalyticsResult.objects.count()
         breakdown = discount_components(r.portfolio_rank / max(n, 1),
-                                        r.liquid_age_days, r.days_of_inventory)
+                                        r.shelf_age_days, r.days_of_inventory)
 
     return render(request, "dx_analytics/sku_detail.html", {
         "p": product, "r": r, "spark": spark,
         "cat_color": CATEGORY_COLORS.get(r.category, "secondary"),
         "tier_color": TIER_COLORS.get(r.lifecycle_tier, "secondary"),
         "breakdown": breakdown,
-        "unit_cost": pricing.unit_cost(product.cost_per_ml, product.max_size),
+        "unit_cost": pricing.pack_cost(product.cost_per_unit, product.max_size),
     })

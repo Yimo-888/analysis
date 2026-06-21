@@ -11,6 +11,6 @@ class PostingJobAdmin(admin.ModelAdmin):
 
 @admin.register(Listing)
 class ListingAdmin(admin.ModelAdmin):
-    list_display = ("variant_sku", "base_product", "bottle_type", "size", "status", "posted_on")
-    list_filter = ("status", "bottle_type", "size")
+    list_display = ("variant_sku", "base_product", "variant_type", "size", "status", "posted_on")
+    list_filter = ("status", "variant_type", "size")
     search_fields = ("variant_sku", "base_product__sku")

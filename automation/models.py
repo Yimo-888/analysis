@@ -1,10 +1,10 @@
 """
 automation — automated listing posting.
 
-The real workflow this models: a base product (one fragrance) is fanned out into
-many marketplace listings — one per (bottle type × size) variant — and those
-listings are generated and posted to the marketplace in bulk *batch jobs*, with
-per-item status tracking (posted / pending / failed).
+The real workflow this models: one base product is fanned out into many marketplace
+listings — one per (variant type × pack size) — and those listings are generated and
+posted to the marketplace in bulk *batch jobs*, with per-item status tracking
+(posted / pending / failed).
 
 Two models capture that:
     PostingJob  — one batch run
@@ -61,7 +61,7 @@ class Listing(models.Model):
     job = models.ForeignKey(PostingJob, on_delete=models.CASCADE, related_name="listings")
     base_product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="listings")
     variant_sku = models.CharField(max_length=96, unique=True)
-    bottle_type = models.CharField(max_length=16)   # Vial / Atomizer
+    variant_type = models.CharField(max_length=16)   # Single / Bundle
     size = models.CharField(max_length=8)
     title = models.CharField(max_length=160)
     status = models.CharField(max_length=8, choices=STATUS_CHOICES, default=POSTED)

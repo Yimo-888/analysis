@@ -45,11 +45,11 @@ def clearance(request):
     rows = []
     for r in liquidating:
         bd = discount_components(r.portfolio_rank / max(n_all, 1),
-                                 r.liquid_age_days, r.days_of_inventory)
+                                 r.shelf_age_days, r.days_of_inventory)
         rows.append({"r": r, "breakdown": bd})
     return render(request, "lifecycle/clearance.html", {
         "rows": rows,
         "n": len(rows),
         "website": sum(1 for r in liquidating if r.liquidation_strategy == "WEBSITE_DISCOUNT"),
-        "ebay": sum(1 for r in liquidating if r.liquidation_strategy == "EBAY"),
+        "marketplace": sum(1 for r in liquidating if r.liquidation_strategy == "MARKETPLACE"),
     })

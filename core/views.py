@@ -20,10 +20,10 @@ APPS = [
     },
     {
         "name": "Automation", "badge": "", "url": "automation:overview",
-        "tagline": "Automated marketplace listing posting.",
-        "blurb": "Explodes each base product into many variant listings (bottle type × size), "
-                 "generates each SKU and title, and posts them in bulk batch jobs with "
-                 "per-item status tracking.",
+        "tagline": "One-click marketplace listing posting.",
+        "blurb": "Processes the whole catalog in one run — explodes each base SKU into variant "
+                 "listings (variant type × pack size), generates each SKU and title, and posts "
+                 "them in bulk batch jobs with per-item status tracking.",
         "color": "primary",
     },
     {

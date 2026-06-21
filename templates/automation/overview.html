@@ -5,55 +5,79 @@
 {% block content %}
 
 <div class="module-intro rounded p-3 mb-4">
-  <h1 class="h4 mb-1">Automation — Automated Listing Posting</h1>
-  <p class="mb-0 text-muted">Listing each variant by hand doesn't scale. This pipeline
-    <strong>explodes one base fragrance into {{ variants_per }} marketplace listings</strong>
-    (bottle&nbsp;type × size), generates each listing's SKU and title, and <strong>posts them in
-    bulk batch jobs</strong> — tracking every item as posted / pending / failed.</p>
+  <h1 class="h4 mb-1">Automation — One-Click Listing Posting</h1>
+  <p class="mb-0 text-muted">Listing every variant by hand doesn't scale. This pipeline turns the
+    <strong>whole catalog</strong> into marketplace listings in a single run — each base SKU
+    fanned into {{ variants_per }} variants, generated, and posted in bulk with per-item tracking.</p>
 </div>
 
 {% if empty %}
   <div class="alert alert-warning">No data yet — run <code>python manage.py seed_demo</code>.</div>
 {% else %}
 
+<!-- one-click run -->
+<div class="card shadow-sm mb-4"><div class="card-body text-center py-4">
+  <button id="runBtn" class="btn btn-primary btn-lg px-4" onclick="runPipeline()">
+    ▶ Run listing automation
+  </button>
+  <div class="text-muted small mt-2">
+    one click → processes all {{ catalog_size|intcomma }} SKUs → ~{{ catalog_size|intcomma }}×{{ variants_per }} listings
+  </div>
+  <div id="runProgress" class="progress mt-3 mx-auto" style="max-width:520px;height:1.3rem;display:none">
+    <div id="runBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%">0%</div>
+  </div>
+  <div id="runDone" class="text-success fw-semibold mt-2" style="display:none"></div>
+</div></div>
+
+<!-- the connected pipeline -->
+<div class="card shadow-sm mb-4"><div class="card-body">
+  <h2 class="h6 text-uppercase text-muted">How it connects</h2>
+  <div class="d-flex flex-wrap align-items-stretch gap-2 mt-2">
+    {% for s in steps %}
+      <div class="pipe-step border rounded p-3 flex-fill text-center" data-step="{{ forloop.counter0 }}">
+        <div class="badge bg-secondary mb-1">Step {{ forloop.counter }}</div>
+        <div class="fw-semibold">{{ s.name }}</div>
+        <div class="small text-muted">{{ s.detail }}</div>
+      </div>
+      {% if not forloop.last %}<div class="align-self-center fs-4 text-muted">→</div>{% endif %}
+    {% endfor %}
+  </div>
+</div></div>
+
+<!-- scale stats -->
 <div class="row g-3 mb-4">
   <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
-    <div class="text-muted small text-uppercase">Base products</div>
-    <div class="display-6">{{ n_base }}</div>
-    <div class="small text-muted">× {{ variants_per }} variants each</div></div></div></div>
+    <div class="text-muted small text-uppercase">Catalog SKUs</div>
+    <div class="display-6">{{ catalog_size|intcomma }}</div></div></div></div>
   <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
     <div class="text-muted small text-uppercase">Listings generated</div>
-    <div class="display-6">{{ total|intcomma }}</div></div></div></div>
+    <div class="display-6">{{ total|intcomma }}</div>
+    <div class="small text-muted">from {{ n_base|intcomma }} products</div></div></div></div>
   <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
-    <div class="text-muted small text-uppercase">Posted</div>
-    <div class="display-6 text-success">{{ posted|intcomma }}</div></div></div></div>
+    <div class="text-muted small text-uppercase">Success rate</div>
+    <div class="display-6 text-success">{{ success_rate }}%</div>
+    <div class="small text-muted">{{ failed }} failed · {{ pending }} pending</div></div></div></div>
   <div class="col-6 col-lg-3"><div class="card shadow-sm h-100"><div class="card-body">
-    <div class="text-muted small text-uppercase">Pending / failed</div>
-    <div class="display-6"><span class="text-warning">{{ pending }}</span>
-      <span class="text-muted">/</span> <span class="text-danger">{{ failed }}</span></div></div></div></div>
+    <div class="text-muted small text-uppercase">Throughput</div>
+    <div class="display-6">≈{{ throughput }}<span class="fs-6 text-muted">/sec</span></div></div></div></div>
 </div>
 
 <div class="row g-4">
   <div class="col-lg-7"><div class="card shadow-sm h-100"><div class="card-body">
-    <h2 class="h6 text-uppercase text-muted">How the fan-out works</h2>
+    <h2 class="h6 text-uppercase text-muted">Fan-out example</h2>
     {% if sample_base %}
     <p class="small mb-2">One base product →
       <a href="{% url 'dx_analytics:sku_detail' sample_base.sku %}">{{ sample_base.sku }}</a>
-      <span class="text-muted">{{ sample_base.name }}</span> → {{ variants_per }} listings:</p>
-    <div class="table-responsive">
-    <table class="table table-sm align-middle mb-0">
+      → {{ variants_per }} listings:</p>
+    <div class="table-responsive"><table class="table table-sm align-middle mb-0">
       <thead><tr><th>Variant SKU</th><th>Type</th><th>Size</th><th>Status</th></tr></thead>
       <tbody>
       {% for v in sample_variants %}
-        <tr>
-          <td><code>{{ v.variant_sku }}</code></td>
-          <td>{{ v.bottle_type }}</td><td>{{ v.size }}</td>
-          <td><span class="badge bg-{{ listing_colors|get_item:v.status|default:'secondary' }}">{{ v.status }}</span></td>
-        </tr>
+        <tr><td><code>{{ v.variant_sku }}</code></td><td>{{ v.variant_type }}</td><td>{{ v.size }}</td>
+          <td><span class="badge bg-{{ listing_colors|get_item:v.status|default:'secondary' }}">{{ v.status }}</span></td></tr>
       {% endfor %}
       </tbody>
-    </table>
-    </div>
+    </table></div>
     {% endif %}
   </div></div></div>
   <div class="col-lg-5"><div class="card shadow-sm h-100"><div class="card-body">
@@ -63,10 +87,9 @@
 </div>
 
 <div class="card shadow-sm mt-4"><div class="card-body">
-  <h2 class="h6 text-uppercase text-muted">Posting jobs</h2>
-  <div class="table-responsive">
-  <table class="table table-sm align-middle mb-0">
-    <thead><tr><th>Job</th><th>Date</th><th>Status</th><th style="width:30%">Progress</th>
+  <h2 class="h6 text-uppercase text-muted">Posting jobs (one click each)</h2>
+  <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Job</th><th>Date</th><th>Status</th><th style="width:28%">Progress</th>
       <th class="text-end">Posted</th><th class="text-end">Pending</th><th class="text-end">Failed</th></tr></thead>
     <tbody>
     {% for row in jobs %}
@@ -74,20 +97,15 @@
         <td><a href="{% url 'automation:job_detail' row.job.pk %}">{{ row.job.name }}</a></td>
         <td class="text-muted small">{{ row.job.created_on }}</td>
         <td><span class="badge bg-{{ row.color }}">{{ row.job.get_status_display }}</span></td>
-        <td>
-          <div class="progress" style="height:1.1rem">
-            <div class="progress-bar bg-success" style="width: {{ row.job.progress_pct }}%">
-              {{ row.job.progress_pct }}%</div>
-          </div>
-        </td>
+        <td><div class="progress" style="height:1.1rem">
+          <div class="progress-bar bg-success" style="width: {{ row.job.progress_pct }}%">{{ row.job.progress_pct }}%</div></div></td>
         <td class="text-end text-success">{{ row.job.posted }}</td>
         <td class="text-end text-warning">{{ row.job.pending }}</td>
         <td class="text-end text-danger">{{ row.job.failed }}</td>
       </tr>
     {% endfor %}
     </tbody>
-  </table>
-  </div>
+  </table></div>
 </div></div>
 
 {{ status_dist|json_script:"statusData" }}
@@ -106,5 +124,28 @@
       options: { plugins: { legend: { position: 'bottom' } } }
     });
   }
+
+  // one-click run: animate the connected pipeline (purely illustrative, no backend mutation)
+  window.runPipeline = function () {
+    const btn = document.getElementById('runBtn');
+    const steps = Array.from(document.querySelectorAll('.pipe-step'));
+    const prog = document.getElementById('runProgress');
+    const bar = document.getElementById('runBar');
+    const done = document.getElementById('runDone');
+    btn.disabled = true; done.style.display = 'none';
+    prog.style.display = 'flex'; steps.forEach(s => s.classList.remove('border-primary', 'bg-light'));
+    let i = 0;
+    const tick = setInterval(() => {
+      steps.forEach((s, k) => s.classList.toggle('border-primary', k <= i));
+      steps.forEach((s, k) => s.classList.toggle('bg-light', k <= i));
+      const pct = Math.round((i + 1) / steps.length * 100);
+      bar.style.width = pct + '%'; bar.textContent = pct + '%';
+      if (++i >= steps.length) {
+        clearInterval(tick);
+        done.textContent = '✓ Catalog processed — listings posted (this demo replays the last run).';
+        done.style.display = 'block'; btn.disabled = false;
+      }
+    }, 450);
+  };
 </script>
 {% endblock %}

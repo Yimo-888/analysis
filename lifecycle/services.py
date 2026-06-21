@@ -2,13 +2,13 @@
 lifecycle — the product-lifecycle state machine + clearance-discount engine.
 
 Maps each v2 category to one of six tiers and, for challenged SKUs, routes by
-where the stock physically sits (aging perishable "lab" liquid vs. sealed
-warehouse vs. nothing). Website liquidations get a multi-factor markdown.
+where the stock physically sits (aging open/perishable stock vs. sealed stock vs.
+nothing). Website liquidations get a multi-factor markdown.
 """
 from core.services.metrics import interp_factor
 
-LIQUIDATE_LIQUID_AGE = 365     # aging lab liquid starts clearing
-DISPOSE_LIQUID_AGE = 540       # spoiled — write off
+LIQUIDATE_SHELF_AGE = 365     # aging open stock starts clearing
+DISPOSE_SHELF_AGE = 540       # past shelf life — write off
 
 TIER_ORDER = ["NEW", "STAR", "CORE", "WATCH", "LIQUIDATE", "DISPOSE"]
 TIER_COLORS = {
@@ -44,28 +44,28 @@ def resolve_lifecycle(category, m):
     if category in _SIMPLE:
         return _SIMPLE[category]
 
-    age, lab, wh = m["liquid_age"], m["lab_qty"], m["wh_qty"]
+    age, open_q, sealed = m["shelf_age"], m["open_qty"], m["sealed_qty"]
     if category == "Liquidate Candidate":
-        if lab > 0 and age is not None and age > LIQUIDATE_LIQUID_AGE:
+        if open_q > 0 and age is not None and age > LIQUIDATE_SHELF_AGE:
             return "LIQUIDATE", "WEBSITE_DISCOUNT"
-        if lab > 0:
-            return "WATCH", ""              # fresh liquid — hold at full price
-        if wh > 0:
-            return "LIQUIDATE", "EBAY"      # sealed only — move on the marketplace
+        if open_q > 0:
+            return "WATCH", ""                # fresh open stock — hold at full price
+        if sealed > 0:
+            return "LIQUIDATE", "MARKETPLACE"  # sealed only — move on the marketplace
         return "WATCH", ""
     # Dispose Candidate
-    if lab > 0 and age is not None and age > DISPOSE_LIQUID_AGE:
-        return "DISPOSE", ""                # spoiled
-    if wh > 0:
-        return "LIQUIDATE", "EBAY"          # rescue sealed stock before writing off
-    if lab > 0:
+    if open_q > 0 and age is not None and age > DISPOSE_SHELF_AGE:
+        return "DISPOSE", ""                  # past shelf life
+    if sealed > 0:
+        return "LIQUIDATE", "MARKETPLACE"      # rescue sealed stock before writing off
+    if open_q > 0:
         return "LIQUIDATE", "WEBSITE_DISCOUNT"
     return "DISPOSE", ""
 
 
-def discount_components(rank_ratio, liquid_age, days_of_inventory):
+def discount_components(rank_ratio, shelf_age, days_of_inventory):
     rank_f = interp_factor(rank_ratio, _RANK_BP)
-    age_f = interp_factor(liquid_age or 0, _AGE_BP)
+    age_f = interp_factor(shelf_age or 0, _AGE_BP)
     over_f = interp_factor(days_of_inventory, _OVER_BP)
     return {
         "base": 10,
@@ -77,7 +77,7 @@ def discount_components(rank_ratio, liquid_age, days_of_inventory):
 
 def discount_for(m, catalog_size):
     c = discount_components(m["portfolio_rank"] / max(catalog_size, 1),
-                            m["liquid_age"], m["days_of_inventory"])
+                            m["shelf_age"], m["days_of_inventory"])
     raw = c["base"] + c["rank_w"] + c["age_w"] + c["over_w"]
     return int(round(max(5, min(40, raw))))
 

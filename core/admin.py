@@ -5,8 +5,8 @@ from .models import AnalyticsResult, DailySale, Product
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("sku", "name", "brand", "cost_per_ml", "current_inventory",
-                    "lab_qty", "wh_qty", "is_new")
+    list_display = ("sku", "name", "brand", "cost_per_unit", "current_inventory",
+                    "open_qty", "sealed_qty", "is_new")
     search_fields = ("sku", "name", "brand")
     list_filter = ("brand", "is_new", "max_size")
 

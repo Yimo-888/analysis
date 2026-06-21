@@ -31,10 +31,10 @@
       <tr><td>Sell-through (grounded)</td><td class="text-end">{{ r.sell_through_rate|floatformat:3 }}</td></tr>
       <tr><td>Days of inventory</td><td class="text-end">{{ r.days_of_inventory|floatformat:0 }}</td></tr>
       <tr><td>ROI</td><td class="text-end">{{ r.roi|floatformat:2 }}</td></tr>
-      <tr><td>Inventory</td><td class="text-end">{{ p.current_inventory }} ({{ p.lab_qty }} lab / {{ p.wh_qty }} sealed)</td></tr>
-      {% if r.liquid_age_days is not None %}<tr><td>Liquid age</td><td class="text-end">{{ r.liquid_age_days }} d</td></tr>{% endif %}
+      <tr><td>Inventory</td><td class="text-end">{{ p.current_inventory }} ({{ p.open_qty }} open / {{ p.sealed_qty }} sealed)</td></tr>
+      {% if r.shelf_age_days is not None %}<tr><td>Shelf age</td><td class="text-end">{{ r.shelf_age_days }} d</td></tr>{% endif %}
       <tr><td>Inventory value</td><td class="text-end">${{ r.inventory_value|floatformat:0 }}</td></tr>
-      <tr><td>Cost · tier</td><td class="text-end">${{ p.cost_per_ml }}/ml · {{ r.expected_tier }}</td></tr>
+      <tr><td>Cost · tier</td><td class="text-end">${{ p.cost_per_unit }}/unit · {{ r.expected_tier }}</td></tr>
     </table>
   </div></div></div>
 </div>
