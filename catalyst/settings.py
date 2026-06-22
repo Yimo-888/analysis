@@ -96,7 +96,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static"]
+# CSS is inlined in the base template, so a static dir is optional.
+STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
 # Manifest (hashed, cache-busted) static files in production; plain storage in
 # dev/tests so the {% static %} tag works without running collectstatic first.
 _staticfiles_backend = (

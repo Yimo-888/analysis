@@ -1,4 +1,3 @@
-{% load static %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -8,54 +7,132 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+  <style>
+    /* === Demo design system (inlined so it always loads) ============== */
+    :root{
+      --brand:#6366f1;--brand-2:#8b5cf6;--brand-grad:linear-gradient(135deg,#6366f1,#8b5cf6);
+      --bg:#f1f5f9;--surface:#fff;--text:#0f172a;--muted:#64748b;--border:#e7ecf3;--radius:14px;
+      --shadow-sm:0 1px 2px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.05);
+      --shadow:0 4px 14px rgba(15,23,42,.06);--shadow-lg:0 12px 30px rgba(15,23,42,.10);
+    }
+    *{-webkit-font-smoothing:antialiased;}
+    body{font-family:Inter,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+    a{text-decoration:none;color:var(--brand);} a:hover{color:var(--brand-2);}
+    h1,h2,h3,h4,h5,h6{color:var(--text);}
+    ::selection{background:rgba(99,102,241,.18);}
+
+    /* top nav (logo left + each app across the top) */
+    .topnav{background:#fff;border-bottom:1px solid var(--border);box-shadow:var(--shadow-sm);}
+    .topnav .navbar-brand{font-weight:800;color:var(--text)!important;font-size:1.2rem;display:flex;align-items:center;gap:9px;}
+    .brand-dots{display:inline-flex;gap:3px;}
+    .brand-dots span{width:9px;height:9px;border-radius:50%;display:block;}
+    .topnav .nav-link{color:#475569;font-weight:600;padding:.5rem .9rem;border-radius:9px;margin:0 1px;}
+    .topnav .nav-link:hover{background:#f1f5f9;color:var(--text);}
+    .topnav .nav-link.active{color:var(--brand);background:#eef2ff;}
+    .topnav .nav-link .tag{font-size:.6rem;font-weight:700;padding:0 6px;border-radius:999px;background:#e2e8f0;color:#475569;margin-left:4px;}
+    .topnav .nav-link.active .tag{background:#c7d2fe;color:#3730a3;}
+    .accent-strip{height:3px;background:var(--brand-grad);}
+    .chip{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:600;color:var(--muted);
+      background:var(--bg);border:1px solid var(--border);padding:5px 11px;border-radius:999px;}
+
+    .content{padding:24px 16px;max-width:1320px;margin:0 auto;}
+    .foot{color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);margin:28px auto 0;padding:18px 16px;max-width:1320px;}
+
+    /* cards + KPI */
+    .card{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-sm);transition:box-shadow .18s,transform .18s;}
+    .card:hover{box-shadow:var(--shadow);}
+    .card .card-body{padding:18px 20px;}
+    .display-6{font-weight:800;font-size:2rem;letter-spacing:-.02em;color:var(--text);}  /* dark + readable */
+    .card .text-uppercase.small{letter-spacing:.08em;font-weight:600;color:var(--muted)!important;}
+    .module-intro{background:linear-gradient(135deg,#eef2ff,#f5f3ff);border:1px solid #e0e7ff!important;border-left:4px solid var(--brand)!important;border-radius:var(--radius);}
+
+    /* buttons */
+    .btn{border-radius:10px;font-weight:600;}
+    .btn-primary{background:var(--brand);border-color:var(--brand);}
+    .btn-primary:hover{background:var(--brand-2);border-color:var(--brand-2);}
+    .btn-outline-primary{color:var(--brand);border-color:#c7d2fe;}
+    .btn-outline-primary:hover{background:var(--brand);border-color:var(--brand);color:#fff;}
+
+    /* tables */
+    .table thead th{font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap;border-bottom:1px solid var(--border);}
+    .table>:not(caption)>*>*{padding:.55rem .6rem;border-bottom-color:#f1f5f9;}
+    .table-hover tbody tr:hover{background:#f8fafc;}
+    code{color:#4338ca;background:#eef2ff;padding:1px 6px;border-radius:6px;font-size:.82em;}
+
+    /* badges (soft pills) */
+    .badge{border-radius:999px;font-weight:600;padding:.32em .7em;}
+    .badge.bg-success{background:#dcfce7!important;color:#15803d!important;}
+    .badge.bg-danger{background:#fee2e2!important;color:#b91c1c!important;}
+    .badge.bg-warning{background:#fef3c7!important;color:#b45309!important;}
+    .badge.bg-info{background:#cffafe!important;color:#0e7490!important;}
+    .badge.bg-primary{background:#e0e7ff!important;color:#4338ca!important;}
+    .badge.bg-secondary{background:#e2e8f0!important;color:#475569!important;}
+    .badge.bg-dark{background:#e2e8f0!important;color:#1e293b!important;}
+    .text-bg-light{background:var(--bg)!important;border:1px solid var(--border);color:var(--muted)!important;}
+
+    /* sub-nav pills */
+    .subnav .nav-pills{gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:5px;display:inline-flex;box-shadow:var(--shadow-sm);}
+    .subnav .nav-link{padding:.35rem .9rem;border-radius:8px;color:var(--muted);font-weight:600;font-size:.85rem;}
+    .subnav .nav-link.active{background:var(--brand);color:#fff;}
+
+    /* progress + pipeline */
+    .progress{background:#eef2f7;border-radius:999px;}
+    .progress-bar{background:var(--brand-grad);font-weight:600;}
+    .progress-bar.bg-success{background:#22c55e!important;}
+    .pipe-step{background:var(--surface);transition:all .2s;min-width:130px;border-color:var(--border)!important;}
+    .pipe-step.border-primary{border-color:var(--brand)!important;box-shadow:0 6px 16px rgba(99,102,241,.18);transform:translateY(-2px);}
+
+    /* home hero (light panel, dark text) + feature cards */
+    .hero{background:linear-gradient(135deg,#eef2ff 0%,#faf5ff 100%);border:1px solid #e0e7ff;border-radius:18px;padding:32px;}
+    .hero .eyebrow{color:var(--brand);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:.72rem;}
+    .hero h1{color:var(--text);font-weight:800;letter-spacing:-.02em;}
+    .feature-card{height:100%;}
+    .feature-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);}
+    .feat-icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:1.25rem;background:#eef2ff;color:var(--brand);margin-bottom:12px;}
+    .border-start.border-4{border-radius:10px;background:#f8fafc!important;}
+  </style>
 </head>
 <body>
 {% with app=request.resolver_match.app_name %}
-<div class="app-shell">
-
-  <aside class="sidebar" id="sidebar">
-    <a class="sidebar-brand" href="{% url 'home' %}">
-      <span class="brand-mark"><i class="bi bi-boxes"></i></span>
-      <span class="brand-text">Demo<small>inventory intelligence</small></span>
-    </a>
-    <nav class="sidebar-nav">
-      <a class="nav-link {% if not app %}active{% endif %}" href="{% url 'home' %}"><i class="bi bi-grid-1x2"></i> Home</a>
-      <div class="nav-group">Apps</div>
-      <a class="nav-link {% if app == 'analytics' %}active{% endif %}" href="{% url 'analytics:dashboard' %}"><i class="bi bi-graph-up"></i> Analytics <span class="tag">v1</span></a>
-      <a class="nav-link {% if app == 'dx_analytics' %}active{% endif %}" href="{% url 'dx_analytics:dashboard' %}"><i class="bi bi-bar-chart-line"></i> DX Analytics <span class="tag tag-ok">v2</span></a>
-      <a class="nav-link {% if app == 'automation' %}active{% endif %}" href="{% url 'automation:overview' %}"><i class="bi bi-lightning-charge"></i> Automation</a>
-      <a class="nav-link {% if app == 'lifecycle' %}active{% endif %}" href="{% url 'lifecycle:dashboard' %}"><i class="bi bi-arrow-repeat"></i> Lifecycle</a>
-    </nav>
-    <div class="sidebar-foot">
-      <i class="bi bi-database"></i> Synthetic data · portfolio demo
+<div class="sticky-top">
+  <nav class="navbar navbar-expand-lg topnav">
+    <div class="container-fluid" style="max-width:1320px">
+      <a class="navbar-brand" href="{% url 'home' %}">
+        <span class="brand-dots"><span style="background:#4c8bf5"></span><span style="background:#e0457b"></span><span style="background:#34a853"></span></span>
+        Demo
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item"><a class="nav-link {% if not app %}active{% endif %}" href="{% url 'home' %}"><i class="bi bi-grid-1x2"></i> Home</a></li>
+          <li class="nav-item"><a class="nav-link {% if app == 'analytics' %}active{% endif %}" href="{% url 'analytics:dashboard' %}"><i class="bi bi-graph-up"></i> Analytics <span class="tag">v1</span></a></li>
+          <li class="nav-item"><a class="nav-link {% if app == 'dx_analytics' %}active{% endif %}" href="{% url 'dx_analytics:dashboard' %}"><i class="bi bi-bar-chart-line"></i> DX Analytics <span class="tag">v2</span></a></li>
+          <li class="nav-item"><a class="nav-link {% if app == 'automation' %}active{% endif %}" href="{% url 'automation:overview' %}"><i class="bi bi-lightning-charge"></i> Automation</a></li>
+          <li class="nav-item"><a class="nav-link {% if app == 'lifecycle' %}active{% endif %}" href="{% url 'lifecycle:dashboard' %}"><i class="bi bi-arrow-repeat"></i> Lifecycle</a></li>
+        </ul>
+        <span class="chip"><i class="bi bi-stars"></i> Synthetic data · demo</span>
+      </div>
     </div>
-  </aside>
-  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-  <div class="main">
-    <header class="topbar">
-      <button class="btn-icon d-lg-none" id="sidebarToggle" aria-label="Menu"><i class="bi bi-list"></i></button>
-      <span class="topbar-title d-lg-none">Demo</span>
-      <span class="ms-auto chip"><i class="bi bi-stars"></i> Synthetic data</span>
-    </header>
-
-    <main class="content">
-      {% block subnav %}{% endblock %}
-      {% block content %}{% endblock %}
-      <footer class="foot">
-        <strong>Demo</strong> — a multi-app inventory-intelligence site (analytics · dx&nbsp;analytics ·
-        automation · lifecycle). All data is synthetic; no real catalog, customer, or pricing data is used.
-      </footer>
-    </main>
-  </div>
+  </nav>
+  <div class="accent-strip"></div>
 </div>
 {% endwith %}
+
+<main class="content">
+  {% block subnav %}{% endblock %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="foot">
+  <strong>Demo</strong> — a multi-app inventory-intelligence site (analytics · dx&nbsp;analytics ·
+  automation · lifecycle). All data is synthetic; no real catalog, customer, or pricing data is used.
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-  // global Chart.js theme so every chart matches the design system
   if (window.Chart) {
     Chart.defaults.font.family = "Inter, system-ui, sans-serif";
     Chart.defaults.font.size = 11;
@@ -66,21 +143,13 @@
     Chart.defaults.plugins.tooltip.padding = 10;
     Chart.defaults.plugins.tooltip.cornerRadius = 8;
     Chart.defaults.borderColor = "rgba(148,163,184,.15)";
-    Chart.defaults.scale.grid.color = "rgba(148,163,184,.15)";
-    Chart.defaults.scale.grid.drawBorder = false;
+    if (Chart.defaults.scale && Chart.defaults.scale.grid) {
+      Chart.defaults.scale.grid.color = "rgba(148,163,184,.15)";
+    }
     Chart.defaults.elements.bar.borderRadius = 6;
     Chart.defaults.elements.line.tension = 0.35;
     Chart.defaults.elements.point.radius = 0;
   }
-  // mobile sidebar drawer
-  (function () {
-    const t = document.getElementById('sidebarToggle');
-    const b = document.getElementById('sidebarBackdrop');
-    const open = () => document.body.classList.add('sidebar-open');
-    const close = () => document.body.classList.remove('sidebar-open');
-    if (t) t.addEventListener('click', open);
-    if (b) b.addEventListener('click', close);
-  })();
 </script>
 {% block scripts %}{% endblock %}
 </body>

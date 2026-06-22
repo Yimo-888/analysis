@@ -3,16 +3,12 @@
 {% block content %}
 
 <div class="hero mb-4">
-  <div class="position-relative" style="z-index:1">
-    <div class="d-inline-flex align-items-center gap-2 mb-2" style="opacity:.9">
-      <i class="bi bi-stars"></i><span class="small text-uppercase" style="letter-spacing:.14em">Inventory Intelligence</span>
-    </div>
-    <h1 class="display-6 mb-2" style="background:none;-webkit-text-fill-color:#fff">Demo</h1>
-    <p class="lead mb-0" style="max-width:60ch;opacity:.95">
-      Inventory analytics, product lifecycle &amp; dynamic pricing for a ~{{ n_products|default:0 }}-SKU
-      catalog of perishable goods — one site, four independent apps you can open and read on their own.
-    </p>
-  </div>
+  <div class="eyebrow mb-2"><i class="bi bi-stars"></i> Inventory Intelligence</div>
+  <h1 class="display-5 mb-2">Demo</h1>
+  <p class="lead mb-0 text-secondary" style="max-width:64ch">
+    Inventory analytics, product lifecycle &amp; dynamic pricing for a ~{{ n_products|default:0 }}-SKU
+    catalog of perishable goods — one site, four independent apps you can open and read on their own.
+  </p>
 </div>
 
 {% if not has_data %}
