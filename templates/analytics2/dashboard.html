@@ -1,12 +1,12 @@
 {% extends "core/base.html" %}
 {% load humanize %}
 {% load core_extras %}
-{% block title %}DX Analytics (v2){% endblock %}
-{% block subnav %}{% include "dx_analytics/_subnav.html" with active='dashboard' %}{% endblock %}
+{% block title %}Analytics v2{% endblock %}
+{% block subnav %}{% include "analytics2/_subnav.html" with active='dashboard' %}{% endblock %}
 {% block content %}
 
 <div class="module-intro rounded p-3 mb-4">
-  <h1 class="h4 mb-1">DX Analytics <span class="badge bg-success">v2 · production</span></h1>
+  <h1 class="h4 mb-1">Analytics v2 <span class="badge bg-success">production</span></h1>
   <p class="mb-0 text-muted">The rewrite the company adopted. Grounds sell-through in
     <em>average</em> inventory, ranks the catalog on a composite score, and runs an
     <strong>8-way category cascade</strong> off portfolio-wide percentiles. Output feeds the
@@ -57,7 +57,7 @@
     {% for r in top_movers %}
       <tr>
         <td class="text-muted">{{ r.portfolio_rank }}</td>
-        <td><a href="{% url 'dx_analytics:sku_detail' r.product.sku %}">{{ r.product.sku }}</a></td>
+        <td><a href="{% url 'analytics2:sku_detail' r.product.sku %}">{{ r.product.sku }}</a></td>
         <td>{{ r.product.name }}</td>
         <td><span class="badge bg-{{ cat_colors|get_item:r.category|default:'secondary' }}">{{ r.category }}</span></td>
         <td class="text-end">{{ r.weighted_daily_sales|floatformat:2 }}</td>

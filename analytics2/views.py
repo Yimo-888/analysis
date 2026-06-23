@@ -20,7 +20,7 @@ TIERS = ["NEW", "STAR", "CORE", "WATCH", "LIQUIDATE", "DISPOSE"]
 def dashboard(request):
     results = list(AnalyticsResult.objects.select_related("product").order_by("portfolio_rank"))
     if not results:
-        return render(request, "dx_analytics/dashboard.html", {"empty": True})
+        return render(request, "analytics2/dashboard.html", {"empty": True})
 
     counts = Counter(r.category for r in results)
     cat_rows = []
@@ -32,7 +32,7 @@ def dashboard(request):
     step = max(1, len(results) // 120)
     curve = [{"x": r.portfolio_rank, "y": round(r.portfolio_score, 4)} for r in results[::step]]
 
-    return render(request, "dx_analytics/dashboard.html", {
+    return render(request, "analytics2/dashboard.html", {
         "empty": False,
         "n": len(results),
         "total_inv_value": sum(r.inventory_value for r in results),
@@ -56,7 +56,7 @@ def catalog_list(request):
         qs = qs.filter(product__sku__icontains=q) | qs.filter(product__name__icontains=q)
 
     results = list(qs[:400])
-    return render(request, "dx_analytics/catalog.html", {
+    return render(request, "analytics2/catalog.html", {
         "results": results, "total": qs.count(), "shown": len(results),
         "category": category, "tier": tier, "q": q,
         "categories": CATEGORY_ORDER, "tiers": TIERS,
@@ -84,7 +84,7 @@ def sku_detail(request, sku):
         breakdown = discount_components(r.portfolio_rank / max(n, 1),
                                         r.shelf_age_days, r.days_of_inventory)
 
-    return render(request, "dx_analytics/sku_detail.html", {
+    return render(request, "analytics2/sku_detail.html", {
         "p": product, "r": r, "spark": spark,
         "cat_color": CATEGORY_COLORS.get(r.category, "secondary"),
         "tier_color": TIER_COLORS.get(r.lifecycle_tier, "secondary"),

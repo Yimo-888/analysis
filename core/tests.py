@@ -144,13 +144,13 @@ class ViewSmokeTests(TestCase):
         self.job_pk = job.pk
 
     def test_every_app_page_loads(self):
-        urls = ["/", "/analytics/", "/dx-analytics/", "/dx-analytics/catalog/",
+        urls = ["/", "/analytics/", "/analytics-v2/", "/analytics-v2/catalog/",
                 "/automation/", f"/automation/jobs/{self.job_pk}/",
                 "/lifecycle/", "/lifecycle/clearance/"]
         for url in urls:
             self.assertEqual(self.client.get(url).status_code, 200, url)
         sku = Product.objects.first().sku
-        self.assertEqual(self.client.get(f"/dx-analytics/sku/{sku}/").status_code, 200)
+        self.assertEqual(self.client.get(f"/analytics-v2/sku/{sku}/").status_code, 200)
         resp = self.client.get(f"/analytics/product/{sku}/")
         self.assertEqual(resp.status_code, 200)
         self.assertIn("metrics", resp.json())

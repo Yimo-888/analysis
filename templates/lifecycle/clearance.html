@@ -23,7 +23,7 @@
   <tbody>
   {% for row in rows %}
     <tr>
-      <td><a href="{% url 'dx_analytics:sku_detail' row.r.product.sku %}">{{ row.r.product.sku }}</a></td>
+      <td><a href="{% url 'analytics2:sku_detail' row.r.product.sku %}">{{ row.r.product.sku }}</a></td>
       <td>{{ row.r.product.name }}</td>
       <td>{% if row.r.liquidation_strategy == 'WEBSITE_DISCOUNT' %}<span class="badge bg-danger">Website</span>
         {% else %}<span class="badge bg-secondary">Marketplace</span>{% endif %}</td>

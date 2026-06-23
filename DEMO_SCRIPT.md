@@ -18,7 +18,7 @@ Chinese version follow. Personal aid — keep it out of the repo if you prefer
 > and get priced, listed, and cleared automatically. It's one site with four apps —
 > each one a piece I actually built — so let me walk through them."
 
-**[Click DX Analytics]**
+**[Click Analytics v2]**
 > "Start with the core engine — the production version. Every day it ranks the whole
 > catalog on a blend of demand, sell-through, and margin, then sorts every SKU into
 > one of eight categories — from high-demand rare items down to liquidate and dispose
@@ -81,7 +81,7 @@ Chinese version follow. Personal aid — keep it out of the repo if you prefer
 > 会老化、销售速度差异很大，并且自动定价、自动上架、自动清仓。一个网站、四个 app，每一个
 > 都是我实际做的，我一个个过一遍。"
 
-**[点 DX Analytics]**
+**[点 Analytics v2]**
 > "先看核心引擎——生产版本。它每天用「需求 × sell-through × 毛利」给整个目录排名，再把每个
 > SKU 分到八个类别里——从高需求稀缺品，一直到清仓和处置候选。这条幂律曲线就是目录的真相:
 > 少数 SKU 撑起整个盘子，长尾是要清掉的。"

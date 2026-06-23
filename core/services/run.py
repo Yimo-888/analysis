@@ -2,12 +2,12 @@
 Orchestrator — runs the whole pipeline in dependency order and writes the
 shared AnalyticsResult table. Each feature app owns one stage:
 
-    core.metrics → analytics(v1) → dx_analytics(v2) → lifecycle → automation
+    core.metrics → analytics(v1) → analytics2(v2) → lifecycle → automation
 """
 from datetime import date
 
 from analytics.services import build_product_stats, enrich_v1
-from dx_analytics.services import enrich_v2
+from analytics2.services import enrich_v2
 from lifecycle.services import enrich_lifecycle
 
 from .metrics import compute_base_metrics

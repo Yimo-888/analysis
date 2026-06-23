@@ -8,7 +8,7 @@
   <p class="mb-0 text-muted">My first analytics engine — classical inventory theory: weighted demand,
     safety stock, reorder point, EOQ, inventory turnover, and a Pareto-optimal frontier. It reads
     demand off <em>current</em> stock, which is why I later rewrote it as
-    <a href="{% url 'dx_analytics:dashboard' %}">v2</a>.</p>
+    <a href="{% url 'analytics2:dashboard' %}">v2</a>.</p>
 </div>
 
 {% if empty %}
@@ -72,7 +72,7 @@
     <tbody>
     {% for r in table %}
       <tr>
-        <td><a href="{% url 'dx_analytics:sku_detail' r.product.sku %}" class="fw-semibold">{{ r.product.sku }}</a></td>
+        <td><a href="{% url 'analytics2:sku_detail' r.product.sku %}" class="fw-semibold">{{ r.product.sku }}</a></td>
         <td class="small text-muted">{{ r.product.name }}</td>
         <td class="text-end">{{ r.stock|intcomma }}</td>
         <td class="text-end">{{ r.daily_sales|floatformat:2 }}</td>
@@ -98,7 +98,7 @@
   <div class="row g-2">
     {% for r in cases %}
     <div class="col-md-4"><div class="border rounded p-2 h-100 small">
-      <a href="{% url 'dx_analytics:sku_detail' r.product.sku %}">{{ r.product.sku }}</a><br>
+      <a href="{% url 'analytics2:sku_detail' r.product.sku %}">{{ r.product.sku }}</a><br>
       v1: <strong>{{ r.v1_verdict }}</strong> · v2: <strong>{{ r.category }}</strong><br>
       <span class="text-muted">naive STR {{ r.naive_sell_through|floatformat:2 }} → grounded {{ r.sell_through_rate|floatformat:2 }}</span>
     </div></div>

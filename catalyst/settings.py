@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     # feature apps (one site, multiple independent apps)
     "core",
     "analytics",
-    "dx_analytics",
+    "analytics2",
     "automation",
     "lifecycle",
 ]

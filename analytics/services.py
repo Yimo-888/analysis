@@ -4,7 +4,7 @@ analytics (v1) — the original, textbook design.
 Classical inventory theory: weighted demand, safety stock, reorder point, EOQ,
 inventory turnover, and a Pareto-optimal frontier over (sales, profit, ROI).
 Elegant — and it reads demand off the *current* inventory snapshot, which is
-exactly where it breaks (see the dx_analytics rewrite).
+exactly where it breaks (see the analytics2 rewrite).
 """
 import math
 

@@ -3,7 +3,7 @@ Shared data layer for the whole site.
 
 `core` owns the raw synthetic data (Product, DailySale) and the single
 AnalyticsResult join table that the orchestrator writes and every feature app
-(analytics / dx_analytics / lifecycle / automation) reads its own slice of.
+(analytics / analytics2 / lifecycle / automation) reads its own slice of.
 """
 from django.db import models
 
@@ -53,7 +53,7 @@ class AnalyticsResult(models.Model):
     inventory_value = models.FloatField(default=0)
     shelf_age_days = models.IntegerField(null=True, blank=True)
 
-    # dx_analytics (v2)
+    # analytics2 (v2)
     sell_through_rate = models.FloatField(default=0)
     portfolio_score = models.FloatField(default=0)
     portfolio_rank = models.IntegerField(default=0)

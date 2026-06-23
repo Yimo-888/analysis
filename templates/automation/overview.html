@@ -67,7 +67,7 @@
     <h2 class="h6 text-uppercase text-muted">Fan-out example</h2>
     {% if sample_base %}
     <p class="small mb-2">One base product →
-      <a href="{% url 'dx_analytics:sku_detail' sample_base.sku %}">{{ sample_base.sku }}</a>
+      <a href="{% url 'analytics2:sku_detail' sample_base.sku %}">{{ sample_base.sku }}</a>
       → {{ variants_per }} listings:</p>
     <div class="table-responsive"><table class="table table-sm align-middle mb-0">
       <thead><tr><th>Variant SKU</th><th>Type</th><th>Size</th><th>Status</th></tr></thead>

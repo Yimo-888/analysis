@@ -1,5 +1,5 @@
 """
-dx_analytics (v2) — the production design the engine actually ships.
+analytics2 (v2) — the production design the engine actually ships.
 
 Grounds sell-through in *average* inventory, scores and ranks the catalog, then
 runs an explicit 8-way category cascade off portfolio-wide percentiles. This is

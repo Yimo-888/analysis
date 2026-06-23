@@ -1,7 +1,7 @@
 {% extends "core/base.html" %}
 {% load core_extras %}
 {% block title %}Catalog{% endblock %}
-{% block subnav %}{% include "dx_analytics/_subnav.html" with active='catalog' %}{% endblock %}
+{% block subnav %}{% include "analytics2/_subnav.html" with active='catalog' %}{% endblock %}
 {% block content %}
 
 <h1 class="h4">Catalog</h1>
@@ -28,7 +28,7 @@
   </div>
   <div class="col-auto">
     <button class="btn btn-sm btn-dark">Apply</button>
-    <a href="{% url 'dx_analytics:catalog' %}" class="btn btn-sm btn-outline-secondary">Reset</a>
+    <a href="{% url 'analytics2:catalog' %}" class="btn btn-sm btn-outline-secondary">Reset</a>
   </div>
 </form>
 
@@ -41,7 +41,7 @@
   {% for r in results %}
     <tr>
       <td class="text-muted">{{ r.portfolio_rank }}</td>
-      <td><a href="{% url 'dx_analytics:sku_detail' r.product.sku %}">{{ r.product.sku }}</a></td>
+      <td><a href="{% url 'analytics2:sku_detail' r.product.sku %}">{{ r.product.sku }}</a></td>
       <td>{{ r.product.name }}</td>
       <td class="text-muted small">{{ r.product.brand }}</td>
       <td><span class="badge bg-{{ cat_colors|get_item:r.category|default:'secondary' }}">{{ r.category }}</span></td>

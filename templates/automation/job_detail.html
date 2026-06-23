@@ -38,7 +38,7 @@
   {% for v in listings %}
     <tr>
       <td><code>{{ v.variant_sku }}</code></td>
-      <td><a href="{% url 'dx_analytics:sku_detail' v.base_product.sku %}">{{ v.base_product.sku }}</a></td>
+      <td><a href="{% url 'analytics2:sku_detail' v.base_product.sku %}">{{ v.base_product.sku }}</a></td>
       <td>{{ v.variant_type }}</td><td>{{ v.size }}</td>
       <td class="small text-muted">{{ v.title }}</td>
       <td><span class="badge bg-{{ listing_colors|get_item:v.status|default:'secondary' }}">{{ v.status }}</span></td>

@@ -5,14 +5,14 @@ from .models import AnalyticsResult, Product
 # The four feature apps, described for the landing page.
 APPS = [
     {
-        "name": "Analytics", "badge": "v1", "url": "analytics:dashboard", "icon": "bi-graph-up",
+        "name": "Analytics v1", "badge": "", "url": "analytics:dashboard", "icon": "bi-graph-up",
         "tagline": "The original, textbook design.",
         "blurb": "Normalizes sales / profit / ROI, finds the Pareto-optimal frontier, "
                  "and scores on a fixed weighting. Elegant — and it broke on real data.",
         "color": "secondary",
     },
     {
-        "name": "DX Analytics", "badge": "v2", "url": "dx_analytics:dashboard", "icon": "bi-bar-chart-line",
+        "name": "Analytics v2", "badge": "", "url": "analytics2:dashboard", "icon": "bi-bar-chart-line",
         "tagline": "The production rewrite the company adopted.",
         "blurb": "Grounds sell-through in average inventory, ranks the catalog, and runs an "
                  "8-way category cascade that survives messy operational data.",
