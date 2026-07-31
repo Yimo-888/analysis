@@ -99,6 +99,15 @@ def enrich_v1(rows):
             r["v1_verdict"] = "Needs optimization"
 
 
+def _placeholder_profit(pid):
+    """Deterministic, obviously-synthetic profit figure (no real dollar data).
+
+    Returns a small integer in 1..20 keyed off the product id, so the demo never
+    surfaces real-looking financials while staying stable and varied per SKU.
+    """
+    return (pid * 13) % 20 + 1
+
+
 def build_product_stats(rows, ref_date):
     """Materialize rows into unsaved ProductStats instances."""
     from .models import ProductStats
@@ -106,9 +115,9 @@ def build_product_stats(rows, ref_date):
         ProductStats(
             product_id=r["_pid"], run_date=ref_date,
             stock=r["current_inventory"], daily_sales=round(r["weighted_daily_sales"], 2),
-            days_supply=r["days_supply"], total_profit=round(r["profit_total"], 2),
+            days_supply=r["days_supply"], total_profit=_placeholder_profit(r["_pid"]),
             roi_pct=r["roi_pct"], score=r["score_balanced"], is_pareto=r["is_pareto"],
-            status=r["status"], profit_per_day=r["profit_per_day"],
+            status=r["status"], profit_per_day=(r["_pid"] % 3) + 1,
             sell_through_pct=r["sell_through_pct"], reorder_point=r["reorder_point"],
             eoq=r["eoq"], safety_stock=r["safety_stock"], days_of_inventory=r["days_of_inventory"],
             growth_rate_pct=r["growth_rate_pct"], suggested_qty=r["suggested_qty"],
